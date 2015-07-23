@@ -1,0 +1,171 @@
+<!-- <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-material/paper-material.html">
+-->
+
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+
+<script src="model-viewer.js"></script>
+
+<dom-module id="model-viewer">
+  <style>
+    :host {
+    }
+
+    .viewercontainer {
+      position: relative;
+      height: 500px;
+      width: 500px;
+    }
+
+    .loadingspinner {
+      position: absolute;
+      top: 50%;
+      right: 50%;
+      z-index: 10;
+    }
+
+    .buttonloadmodel {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: blue;
+      color: white;
+      z-index: 10;
+    }
+  </style>
+
+  <template>
+      <div class="viewercontainer" on-scenerendered="scenerendered">
+        <paper-button class="buttonloadmodel" on-click="loadmodel" raised>
+          <iron-icon icon="icons:3d-rotation"></iron-icon>
+        </paper-button>
+        <paper-spinner class="loadingspinner" inactive></paper-spinner>
+      </div>
+      <content></content>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'model-viewer',
+
+    ready: function() {
+      var vel = this.getElementsByClassName("viewercontainer")[0];
+      vel.style.backgroundImage = "url('"+ this.previewimg + "')";
+      vel.style.backgroundSize = "contain";
+    },
+
+    attached: function() {
+    },
+
+    loadmodel: function() {
+      this.modelscene = null;
+
+      var renderel = this.getElementsByClassName("viewercontainer")[0];
+      this.renderel = renderel;
+
+      var spinner = this.getElementsByClassName("loadingspinner")[0];
+      this.spinner = spinner;
+
+      spinner.setAttribute('active', "");
+
+      if(!Detector.webgl) {
+        var glerror = Detector.getWebGLErrorMessage();
+        glerror.style.padding = "";
+        glerror.style.margin = "";
+        glerror.style.width = "100%";
+
+        renderel.innerHTML = '';
+        renderel.appendChild(glerror);
+
+        return;
+      }
+
+      var renderheight = renderel.offsetHeight;
+      var renderwidth = renderel.offsetWidth;
+
+      if(this.loadmethod == "http" || this.loadmethod == "json") {
+        var scene = modelscene(this.model, {
+            renderheight: 500,
+            renderwidth: 500,
+            parentel: renderel,
+            loadmethod: this.loadmethod
+        });
+      } else if (this.loadmethod == "protobuf") {
+        var xhr = new XMLHttpRequest();
+
+        xhr.open("GET", this.proto, true);
+
+        xhr.onload = function(e) {
+          console.log("Loaded proto buffer definition.");
+
+          var ProtoBuf = dcodeIO.ProtoBuf;
+          var MeshMsg = ProtoBuf.loadJson(this.response).build("meshthreejs").MeshThreeJS;
+
+          var pb_xhr = ProtoBuf.Util.XHR();
+
+          pb_xhr.open("GET", this.modelviewer.model, true);
+
+          pb_xhr.responseType = "arraybuffer";
+
+          pb_xhr.onload = function(e) {
+            console.log("Loaded protobuffer.");
+
+            var msg = this.MeshMsg.decode(this.response);
+            var scene = modelscene(msg, {
+                renderheight: 500,
+                renderwidth: 500,
+                parentel: renderel,
+                loadmethod: "json"
+            });
+
+          }
+
+          pb_xhr.MeshMsg = MeshMsg;
+          pb_xhr.send();
+
+        }
+
+        xhr.modelviewer = {model: this.model};
+        xhr.send();
+
+      } else {
+        console.log("Element has weird loadmethod: " + this.loadmethod);
+      }
+    },
+
+    scenerendered: function(e) {
+      console.log("Scene rendered!");
+      this.spinner.removeAttribute('active');
+      this.renderel.innerHTML = "";
+      this.modelscene = e.detail;
+
+      this.renderel.innerHTML = '';
+      this.renderel.appendChild(e.detail);
+    },
+
+    properties: {
+      model: {
+        type: String
+      },
+      loadmethod: {
+        type: String
+      },
+      proto: {
+        type: String
+      },
+      previewimg: {
+        type: String
+      }
+    }
+  });
+</script>
