@@ -2,6 +2,6 @@
   "name": "model-viewer",
   "private": true,
   "dependencies": {
-    "polymer": "Polymer/polymer#master"
+    "polymer": "^1.0.0"
   }
 }
