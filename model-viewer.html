@@ -21,8 +21,9 @@
 
     .viewercontainer {
       position: relative;
-      height: 500px;
-      width: 500px;
+      height: 100%;
+      width: 100%;
+      margin: 0 auto;
     }
 
     .loadingspinner {
@@ -49,7 +50,6 @@
         </paper-button>
         <paper-spinner class="loadingspinner" inactive></paper-spinner>
       </div>
-      <content></content>
     </div>
   </template>
 </dom-module>
@@ -95,8 +95,8 @@
 
       if(this.loadmethod == "http" || this.loadmethod == "json") {
         var scene = modelscene(this.model, {
-            renderheight: 500,
-            renderwidth: 500,
+            renderheight: renderel.offsetHeight,
+            renderwidth: renderel.offsetWidth,
             parentel: renderel,
             loadmethod: this.loadmethod
         });
@@ -122,8 +122,8 @@
 
             var msg = this.MeshMsg.decode(this.response);
             var scene = modelscene(msg, {
-                renderheight: 500,
-                renderwidth: 500,
+                renderheight: renderel.offsetHeight,
+                renderwidth: renderel.offsetWidth,
                 parentel: renderel,
                 loadmethod: "json"
             });

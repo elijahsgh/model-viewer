@@ -18,6 +18,10 @@
     :host {
     }
 
+    .papercontainer {
+      margin-bottom: 1em;
+    }
+
     .container {
       position: relative;
       margin-top: 1em;
@@ -26,28 +30,11 @@
       @apply(--layout-vertical);
     }
 
-    .main {
-      width: 500px;
+    .modelcontainer {
       margin-left: auto;
       margin-right: auto;
-    }
-
-    @media (max-width: 1024px) {
-      .container {
-        @apply(--layout-vertical);
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .container {
-//        @apply(--layout-horizontal);
-        @apply(--layout-vertical);
-      }
-    }
-
-    .sidebar {
-      margin-left: 1em;
-      margin-right: 1em;
+      width: 60vw;
+      height: 60vw;
     }
 
     .images {
@@ -65,7 +52,6 @@
 
     .modeltoolbar {
       --paper-toolbar-background: white;
-      min-width: 500px;
     }
 
     .loadingspinner {
@@ -94,9 +80,8 @@
     }
 
     .largeimagedialog {
-      max-height: 100%;
-      min-height: 80%;
-      min-width: 80%;
+      height: 80vw;
+      width: 80vw;
     }
 
     .downloaddialog {
@@ -108,24 +93,9 @@
       width: 100%;
     }
 
-    .authorlabel {
-      color: black;
-      font-weight: bold;
-      margin-right: 1em;
-    }
-
-    .author {
-      color: black;
-    }
-
     .details {
       padding: 1em;
-      @apply(--layout-vertical);
       margin-bottom: 1em;
-    }
-
-    .detailitem {
-
     }
 
     .description {
@@ -150,9 +120,25 @@
 
   <template>
     <div class="container">
-      <div class="main">
-        <paper-material elevation=3>
-          <content></content>
+      <div>
+        <paper-material class="papercontainer" elevation=3>
+          <div class="details">
+            <div>
+              <div>{{publishdate}}</div>
+              <h3>Published by</h3>
+              <div>{{author}}</div>
+            </div>
+          </div>
+
+          <div class="modelcontainer">
+            <content></content>
+          </div>
+
+          <div class="images">
+            <template is="dom-repeat" items="{{images}}">
+              <img class="imagebutton-img" src="{{item.srcsm}}" data-dialog="largeimage" on-click="buttonhandler"></img>
+            </template>
+          </div>
           <paper-toolbar class="modeltoolbar">
             <span class="flex title modeltitle">{{title}}</span>
             <paper-button data-dialog="downloaddialog" class="buttondownload" on-click="buttonhandler" role="button" raised>
@@ -160,42 +146,28 @@
             </paper-button>
           </paper-toolbar>
         </paper-material>
-        <paper-material elevation=3>
-          <div class="images">
-            <template is="dom-repeat" items="{{images}}">
-              <img class="imagebutton-img" src="{{item.srcsm}}" data-dialog="largeimage" on-click="buttonhandler"></img>
-            </template>
-          </div>
-        </paper-material>
       </div>
 
-      <div class="sidebar">
-          <paper-material class="details" elevation=3>
-            <h3>Author</h3>
-            <div>{{author}}</div>
-            <h3>Published</h3>
-            <div>{{publishdate}}</div>
-            <h3>Remixed from</h3>
-            <template is="dom-repeat" items="{{remixedfrom}}">
-              <div>{{item}}</div>
-            </template>
-          </paper-material>
-
-          <paper-material class="description" elevation=3>
-            <h3>Description</h3>
-            <div>
-              The maneki-neko is a Japanese figure of a beckoning cat.<br>The right paw raised maneki-neko invites money.<br><br>Shade 3D Professtional ver.15.1.0<br>Afinia H480 (ABS)
-            </div>
-          </paper-material>
-
-          <paper-material class="licenses" elevation=3>
-            <h3>License</h3>
-            <template is="dom-repeat" items="{{licenses}}">
-              <div>{{item}}</div>
-            </template>
-          </paper-material>
-
-      </div>
+      <paper-material class="description" elevation=3>
+        <h3>Description</h3>
+        <p>
+          The maneki-neko is a Japanese figure of a beckoning cat.<br>
+          The right paw raised maneki-neko invites money.<br>
+          <br>
+          Shade 3D Professtional ver.15.1.0<br>
+          Afinia H480 (ABS)
+        </p>
+        <h3>Remixed from</h3>
+        <template is="dom-repeat" items="{{remixedfrom}}">
+          <div>{{item}}</div>
+        </template>
+      </paper-material>
+      <paper-material class="licenses" elevation=3>
+        <h3>License</h3>
+        <template is="dom-repeat" items="{{licenses}}">
+          <div>{{item}}</div>
+        </template>
+      </paper-material>
     </div>
 
     <paper-dialog id="downloaddialog" class="downloaddialog">
