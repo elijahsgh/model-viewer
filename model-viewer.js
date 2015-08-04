@@ -118,9 +118,6 @@ function modelscene(model, args) {
     var renderwidth = this.parentel.offsetWidth;
     var renderheight = this.parentel.offsetWidth;
 
-    console.log(this.parentel);
-    console.log("Render size: " + renderwidth + " x " + renderheight);
-
     this.renderer.setSize(renderwidth, renderheight);
   }
 }
