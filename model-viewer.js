@@ -6,10 +6,10 @@ function modelscene(model, args) {
 
   console.log("Render size: " + renderwidth + " x " + renderheight);
 
-  var aspect = renderwidth / renderheight;
+  var aspectratio = renderwidth / renderheight;
 
   var scene = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera(60, this.aspect, 0.1, 1000);
+  var camera = new THREE.PerspectiveCamera(60, aspectratio, 0.1, 1000);
   scene.fog = new THREE.Fog(0xeeeeee, 1, 500);
 
   var lights = {"camera": null,
@@ -65,6 +65,8 @@ function modelscene(model, args) {
     console.log("Unknown load method: " + loadmethod);
   }
 
+  window.addEventListener("resize", resized.bind(this));
+
   return this.renderer.domElement;
 
   function loadedmodel(geometry, materials) {
@@ -109,5 +111,16 @@ function modelscene(model, args) {
 
     var renderEvent = new CustomEvent('scenerendered', {'detail': this.renderer.domElement});
     this.parentel.dispatchEvent(renderEvent);
+  }
+
+  function resized(e) {
+    // Keep squared
+    var renderwidth = this.parentel.offsetWidth;
+    var renderheight = this.parentel.offsetWidth;
+
+    console.log(this.parentel);
+    console.log("Render size: " + renderwidth + " x " + renderheight);
+
+    this.renderer.setSize(renderwidth, renderheight);
   }
 }

@@ -19,11 +19,15 @@
     :host {
     }
 
+    .placeholderimg {
+      width: 100%;
+      height: auto;
+    }
+
     .viewercontainer {
       position: relative;
-      height: 100%;
-      width: 100%;
-      margin: 0 auto;
+      margin: 0 10%;
+      padding: 0;
     }
 
     .loadingspinner {
@@ -45,6 +49,7 @@
 
   <template>
       <div class="viewercontainer" on-scenerendered="scenerendered">
+        <img class="placeholderimg" src="{{previewimg}}"/>
         <paper-button class="buttonloadmodel" on-click="loadmodel" raised>
           <iron-icon icon="icons:3d-rotation"></iron-icon>
         </paper-button>
@@ -59,9 +64,6 @@
     is: 'model-viewer',
 
     ready: function() {
-      var vel = this.getElementsByClassName("viewercontainer")[0];
-      vel.style.backgroundImage = "url('"+ this.previewimg + "')";
-      vel.style.backgroundSize = "contain";
     },
 
     attached: function() {
@@ -72,6 +74,12 @@
 
       var renderel = this.getElementsByClassName("viewercontainer")[0];
       this.renderel = renderel;
+
+      // Keep square by using width twice
+      var viewerheight = renderel.offsetWidth;
+      var viewerwidth = renderel.offsetWidth;
+      this.viewerwidth = viewerwidth;
+      this.viewerheight = viewerheight;
 
       var spinner = this.getElementsByClassName("loadingspinner")[0];
       this.spinner = spinner;
@@ -90,15 +98,12 @@
         return;
       }
 
-      var renderheight = renderel.offsetHeight;
-      var renderwidth = renderel.offsetWidth;
-
-      if(this.loadmethod == "http" || this.loadmethod == "json") {
-        var scene = modelscene(this.model, {
-            renderheight: renderel.offsetHeight,
-            renderwidth: renderel.offsetWidth,
+      if (this.loadmethod == "http" || this.loadmethod == "json") {
+        var scene = modelscene(model, {
+            renderheight: viewerheight,
+            renderwidth: viewerwidth,
             parentel: renderel,
-            loadmethod: this.loadmethod
+            loadmethod: loadmethod
         });
       } else if (this.loadmethod == "protobuf") {
         var xhr = new XMLHttpRequest();
@@ -122,8 +127,8 @@
 
             var msg = this.MeshMsg.decode(this.response);
             var scene = modelscene(msg, {
-                renderheight: renderel.offsetHeight,
-                renderwidth: renderel.offsetWidth,
+                renderheight: viewerheight,
+                renderwidth: viewerwidth,
                 parentel: renderel,
                 loadmethod: "json"
             });
