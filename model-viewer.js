@@ -2,6 +2,7 @@ function modelscene(model, args) {
   var renderheight = args.renderheight || 450;
   var renderwidth = args.renderwidth || 450;
   var loadmethod = args.loadmethod || "http";
+  this.modelname = args.modelname || "UserModel";
   this.parentel = args.parentel || null;
 
   console.log("Render size: " + renderwidth + " x " + renderheight);
