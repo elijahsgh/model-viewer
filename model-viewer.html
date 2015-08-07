@@ -41,7 +41,7 @@
   </style>
 
   <template>
-      <div class="viewercontainer" on-scenerendered="scenerendered">
+      <div class="viewercontainer" on-scenerendered="scenerendered" on-loadedmodel="loadedmodel">
         <img class="placeholderimg" src="{{previewimg}}"/>
         <paper-button class="buttonloadmodel" on-click="loadmodel" raised>
           <iron-icon icon="icons:3d-rotation"></iron-icon>
@@ -63,20 +63,6 @@
     },
 
     loadmodel: function() {
-      var renderel = this.getElementsByClassName("viewercontainer")[0];
-      this.renderel = renderel;
-
-      // Keep square by using width twice
-      var viewerheight = renderel.offsetWidth;
-      var viewerwidth = renderel.offsetWidth;
-      this.viewerwidth = viewerwidth;
-      this.viewerheight = viewerheight;
-
-      var spinner = this.getElementsByClassName("loadingspinner")[0];
-      this.spinner = spinner;
-
-      spinner.setAttribute('active', "");
-
       if(!Detector.webgl) {
         var glerror = Detector.getWebGLErrorMessage();
         glerror.style.padding = "";
@@ -89,15 +75,75 @@
         return;
       }
 
+      var renderel = this.getElementsByClassName("viewercontainer")[0];
+      var spinner = this.getElementsByClassName("loadingspinner")[0];
+
+      this.renderel = renderel;
+      this.spinner = spinner;
+
+      // Keep square by using width twice
+      var viewerheight = renderel.offsetWidth;
+      var viewerwidth = renderel.offsetWidth;
+      var aspectratio = viewerwidth / viewerheight;
+
+      this.viewerheight = viewerheight;
+      this.viewerwidth = viewerwidth;
+      this.aspectratio = aspectratio;
+
+      var scene = new THREE.Scene();
+      this.scene = scene;
+
+      var camera = new THREE.PerspectiveCamera(60, this.aspectratio, 0.1, 1000);
+      this.camera = camera;
+
+      scene.fog = new THREE.Fog(0xeeeeee, 1, 500);
+
+      var lights = {"camera": null,
+                    "ambient": null};
+
+      this.lights = lights;
+
+      lights.camera = new THREE.DirectionalLight(0x606060);
+      lights.camera.intensity = 1.0;
+      lights.ambient = new THREE.AmbientLight(0x505050);
+
+      scene.add(lights.camera);
+      scene.add(lights.ambient);
+
+      // Z is *up* for 3D printing! :)
+      camera.up = new THREE.Vector3(0, 0, 1);
+
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+      camera.updateProjectionMatrix();
+
+      var renderer = new THREE.WebGLRenderer({antialias: true});
+      this.renderer = renderer;
+
+      var render = function() {
+        this.lights.camera.position.set(this.camera.position.x,
+                                        this.camera.position.y,
+                                        this.camera.position.z);
+
+        this.renderer.render(this.scene, this.camera);
+        this.renderer.capture = this.renderer.domElement.toDataURL();
+      }
+
+      var controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.damping = 0.2;
+      controls.addEventListener('change', render.bind(this));
+      this.controls = controls;
+
+      renderer.setSize(viewerwidth, viewerheight);
+
+      this.spinner.setAttribute('active', "");
+
       if (this.loadmethod == "http" || this.loadmethod == "json") {
-        var scene = modelscene(model, {
-            renderheight: viewerheight,
-            renderwidth: viewerwidth,
-            parentel: renderel,
-            loadmethod: loadmethod
-        });
+        var loader = new THREE.JSONLoader();
+        loader.load(model, this.loadedmodel.bind(this));
       } else if (this.loadmethod == "protobuf") {
         var xhr = new XMLHttpRequest();
+        xhr.renderel = this.renderel;
 
         xhr.open("GET", this.proto, true);
 
@@ -117,16 +163,16 @@
             console.log("Loaded protobuffer.");
 
             var msg = this.MeshMsg.decode(this.response);
-            var scene = modelscene(msg, {
-                renderheight: viewerheight,
-                renderwidth: viewerwidth,
-                parentel: renderel,
-                loadmethod: "json"
-            });
 
+            var loader = new THREE.JSONLoader();
+            var m = loader.parse(msg);
+            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'materials': m.materials, 'geometry': m.geometry}});
+            console.log(this);
+            this.renderel.dispatchEvent(loadedModelEvent);
           }
 
           pb_xhr.MeshMsg = MeshMsg;
+          pb_xhr.renderel = this.renderel;
           pb_xhr.send();
 
         }
@@ -137,6 +183,56 @@
       } else {
         console.log("Element has weird loadmethod: " + this.loadmethod);
       }
+
+      window.addEventListener("resize", this.viewerresized.bind(this));
+    },
+
+    loadedmodel: function(e) {
+      console.log("Loaded model event");
+
+      var materials = e.detail.materials;
+      var geometry = e.detail.geometry;
+
+      // Purple muavey color 0xA824D6
+      // Grey blue eeeeff
+      // Hot pink #FD4F82 ?
+      var material = new THREE.MeshPhongMaterial({ color: 0xaaaaff, shading: THREE.FlatShading });
+      this.renderobject = new THREE.Mesh(geometry, material);
+
+      this.scene.add(this.renderobject);
+
+      var boundingbox = new THREE.Box3().setFromObject(this.renderobject);
+
+      var objectcenter = boundingbox.center();
+
+      var objectfloorgrid = new THREE.GridHelper(Math.round((Math.max(boundingbox.size().z,
+                                                 boundingbox.size().x))),
+                                                 10.0);
+
+      // Turn floor to match Z-up orientation
+      objectfloorgrid.rotation.x = 90*(Math.PI/180);
+
+      objectfloorgrid.position.x = boundingbox.center().x;
+      objectfloorgrid.position.y = boundingbox.center().y;
+      objectfloorgrid.position.z = boundingbox.min.z;
+
+      this.scene.add(objectfloorgrid);
+
+      this.camera.position.z = boundingbox.max.z;
+      this.camera.position.y = boundingbox.max.y*-4;
+      this.camera.position.x = 0;
+
+      this.camera.lookAt(objectcenter);
+
+      this.controls.target = objectcenter;
+
+      this.lights.camera.position.set(this.camera.position.x,
+                                      this.camera.position.y,
+                                      this.camera.position.z);
+
+      this.renderer.render(this.scene, this.camera);
+
+      this.renderel.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
     },
 
     scenerendered: function(e) {
@@ -146,11 +242,24 @@
       this.modelscene = e.detail;
 
       this.renderel.innerHTML = '';
-      this.renderel.appendChild(e.detail);
+      this.renderel.appendChild(e.detail.renderElement);
+    },
+
+    viewerresized: function(e) {
+      // Keep squared
+      this.renderwidth = this.renderel.offsetWidth;
+      this.renderheight = this.renderel.offsetWidth;
+
+      this.aspectratio = this.renderwidth / this.renderheight;
+
+      this.renderer.setSize(this.renderwidth, this.renderheight);
     },
 
     properties: {
       model: {
+        type: String
+      },
+      modelname: {
         type: String
       },
       loadmethod: {
