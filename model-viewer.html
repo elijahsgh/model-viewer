@@ -246,13 +246,17 @@
     },
 
     viewerresized: function(e) {
+      var renderwidth = this.renderel.offsetWidth;
+      var renderheight = this.renderel.offsetWidth;
+
       // Keep squared
-      this.renderwidth = this.renderel.offsetWidth;
-      this.renderheight = this.renderel.offsetWidth;
+      this.renderwidth = renderwidth;
+      this.renderheight = renderheight;
 
-      this.aspectratio = this.renderwidth / this.renderheight;
+      this.aspectratio = renderwidth / renderheight;
 
-      this.renderer.setSize(this.renderwidth, this.renderheight);
+      if(this.renderer)
+        this.renderer.setSize(renderwidth, renderheight);
     },
 
     properties: {
