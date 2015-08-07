@@ -61,6 +61,8 @@
     },
 
     loadmodel: function() {
+      var renderel = this.getElementsByClassName("viewercontainer")[0];
+
       if(!Detector.webgl) {
         var glerror = Detector.getWebGLErrorMessage();
         glerror.style.padding = "";
@@ -73,7 +75,6 @@
         return;
       }
 
-      var renderel = this.getElementsByClassName("viewercontainer")[0];
       var spinner = this.getElementsByClassName("loadingspinner")[0];
 
       this.renderel = renderel;
