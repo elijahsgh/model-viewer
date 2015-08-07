@@ -165,7 +165,6 @@
             var loader = new THREE.JSONLoader();
             var m = loader.parse(msg);
             var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'materials': m.materials, 'geometry': m.geometry}});
-            console.log(this);
             this.renderel.dispatchEvent(loadedModelEvent);
           }
 
