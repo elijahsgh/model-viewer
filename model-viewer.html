@@ -165,12 +165,13 @@
 
             var loader = new THREE.JSONLoader();
             var m = loader.parse(msg);
-            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'materials': m.materials, 'geometry': m.geometry}});
+            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'name': this.modelname, 'materials': m.materials, 'geometry': m.geometry}});
             this.renderel.dispatchEvent(loadedModelEvent);
           }
 
           pb_xhr.MeshMsg = MeshMsg;
           pb_xhr.renderel = this.renderel;
+          pb_xhr.modelname = this.modelname
           pb_xhr.send();
 
         }
@@ -196,6 +197,8 @@
       // Hot pink #FD4F82 ?
       var material = new THREE.MeshPhongMaterial({ color: 0xaaaaff, shading: THREE.FlatShading });
       this.renderobject = new THREE.Mesh(geometry, material);
+
+      this.renderobject.name = e.detail.name || this.modelname;
 
       this.scene.add(this.renderobject);
 
@@ -235,6 +238,9 @@
 
     scenerendered: function(e) {
       console.log("Scene rendered!");
+
+      // Debug
+      document.modelviewerscene = this.scene;
       this.spinner.removeAttribute('active');
       this.renderel.innerHTML = "";
       this.modelscene = e.detail;
