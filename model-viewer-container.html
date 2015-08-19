@@ -96,7 +96,7 @@
       margin-bottom: 1em;
     }
 
-    .licenses {
+    .license {
       padding: 1em;
       margin-bottom: 1em;
     }
@@ -143,22 +143,21 @@
 
       <paper-material class="description" elevation=3>
         <h3>Description</h3>
-        <p>
-          The maneki-neko is a Japanese figure of a beckoning cat.<br>
-          The right paw raised maneki-neko invites money.<br>
-          <br>
-          Shade 3D Professtional ver.15.1.0<br>
-          Afinia H480 (ABS)
-        </p>
+        <div id="modeldescription">{{description}}</div>
+
         <template is="dom-repeat" items="{{remixedfrom}}">
           <h3>Remixed from</h3>
           <div>{{item}}</div>
         </template>
       </paper-material>
-      <paper-material class="licenses" elevation=3>
+      <paper-material class="license" elevation=3>
         <h3>License</h3>
-        <template is="dom-repeat" items="{{licenses}}">
-          <div>{{item}}</div>
+        <!-- https://wiki.creativecommons.org/wiki/RDFa -->
+        <template is="dom-if" if="1" id="licenseTemplate" license="{{license}}">
+          <span xmlns:dc="http://purl.org/dc/elements/1.1"
+                href="http://purl.org/dc/dcmitype/Text"
+                property="dc:title"
+                rel="dc:type">{{title}}</span>
         </template>
       </paper-material>
     </div>
@@ -166,7 +165,7 @@
     <paper-dialog id="downloaddialog" class="downloaddialog">
       <h2>Download model</h2>
       <paper-dialog-scrollable>
-        You agree to use this model within the constraints of the license.
+        You agree to use the downloaded asset(s) within the constraints of the license(s).
       </paper-dialog-scrollable>
       <div class="buttons">
         <paper-button dialog-dismiss raised>Cancel</paper-button>
@@ -194,6 +193,8 @@
 
     ready: function() {
       this.publishdate = this.publishdate.toLocaleDateString();
+      // unsafe html in element :(
+      this.$.modeldescription.innerHTML = this.description;
     },
 
     attached: function() {
@@ -267,8 +268,8 @@
       publishdate: {
         type: Date
       },
-      licenses: {
-        type: Array
+      license: {
+        type: String
       },
       remixes: {
         type: Array
@@ -283,6 +284,9 @@
         type: String
       },
       downloadurl: {
+        type: String
+      },
+      description: {
         type: String
       }
     }
