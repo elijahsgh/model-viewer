@@ -150,16 +150,83 @@
           <div>{{item}}</div>
         </template>
       </paper-material>
-      <paper-material class="license" elevation=3>
-        <h3>License</h3>
-        <!-- https://wiki.creativecommons.org/wiki/RDFa -->
-        <template is="dom-if" if="1" id="licenseTemplate" license="{{license}}">
+
+      <template is="dom-if" if="this.license" id="licenseTemplate">
+        <paper-material class="license" elevation=3>
+          <!-- https://wiki.creativecommons.org/wiki/RDFa -->
+          <!-- All of this needs to be moved to template to be machine readable/searcable -->
+          <div>
+            <template is="dom-if" if="{{isCCBYSA()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-sa/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBY()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYND()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nd/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nd/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYNC()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nc/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYNCSA()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYNCND()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nc-nd/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCC0()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/publicdomain/mark/1.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://licensebuttons.net/l/publicdomain/88x31.png"/>
+              </a>
+            </template>
+          </div>
+
           <span xmlns:dc="http://purl.org/dc/elements/1.1"
                 href="http://purl.org/dc/dcmitype/Text"
                 property="dc:title"
-                rel="dc:type">{{title}}</span>
-        </template>
-      </paper-material>
+                rel="dc:type"><em>{{license.title}}</em></span>
+          <template is="dom-if" if="license.attributionName">
+            <span>authored by</span>
+            <template is="dom-if" if="{{license.attributionurl}}">
+              <a xmlns:cc="http://creativecommons.org/ns#"
+                 rel="cc:attributionURL"
+                 href="{{license.attributionurl}}"
+                 property="cc:attributionName">{{license.attributionname}}</a>
+            </template>
+            <template is="dom-if" if="{{!license.attributionurl}}">
+              <span xmlns:cc="http://creativecommons.org/ns#"
+                 property="cc:attributionName">{{license.attributionname}}</span>
+            </template>
+          </template>
+          is licensed as <span>{{license.licensetype}}</span>
+        </paper-material>
+      </template>
     </div>
 
     <paper-dialog id="downloaddialog" class="downloaddialog">
@@ -202,6 +269,48 @@
 
     confirmdownload: function() {
       window.open(this.downloadurl);
+    },
+
+    isCCBYSA: function() {
+      if(this.license.licensetype == 'CC BY-SA')
+        return true;
+      return false;
+    },
+
+    isCCBY: function() {
+      if(this.license.licensetype == 'CC BY')
+        return true;
+      return false;
+    },
+
+    isCCBYND: function() {
+      if(this.license.licensetype == 'CC BY-ND')
+        return true;
+      return false;
+    },
+
+    isCCBYNC: function() {
+      if(this.license.licensetype == 'CC BY-NC')
+        return true;
+      return false;
+    },
+
+    isCCBYNCSA: function() {
+      if(this.license.licensetype == 'CC BY-NC-SA')
+        return true;
+      return false;
+    },
+
+    isCCBYNCND: function() {
+      if(this.license.licensetype == 'CC BY-NC-ND')
+        return true;
+      return false;
+    },
+
+    isCC0: function() {
+      if(this.license.licensetype == 'CC0')
+        return true;
+      return false;
     },
 
     buttonhandler: function(e) {
@@ -269,7 +378,7 @@
         type: Date
       },
       license: {
-        type: String
+        type: Object
       },
       remixes: {
         type: Array
