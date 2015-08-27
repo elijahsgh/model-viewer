@@ -139,7 +139,12 @@
 
       if (this.loadmethod == "http" || this.loadmethod == "json") {
         var loader = new THREE.JSONLoader();
-        loader.load(model, this.loadedmodel.bind(this));
+        //loader.load(this.model, this.loadedmodel.bind(this));
+        var loadedmodeldispatch = function(geometry, materials) {
+          this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials}}));
+        };
+
+        loader.load(this.model, loadedmodeldispatch.bind(this));
       } else if (this.loadmethod == "protobuf") {
         var xhr = new XMLHttpRequest();
         xhr.renderel = this.renderel;
