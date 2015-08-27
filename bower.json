@@ -1,7 +1,0 @@
-{
-  "name": "model-viewer",
-  "private": true,
-  "dependencies": {
-    "polymer": "^1.0.0"
-  }
-}

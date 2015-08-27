@@ -118,8 +118,6 @@
           <div class="details">
             <div>
               <h3>{{title}}</h3>
-              <div>{{author}}</div>
-              <div>{{publishdate}}</div>
             </div>
           </div>
 
@@ -143,6 +141,9 @@
 
       <paper-material class="description" elevation=3>
         <h3>Description</h3>
+        <div><span>{{title}}</span> was published by <span>{{author}}</span> on <span>{{publishdate}}</span></div>
+        <br>
+
         <div id="modeldescription">{{description}}</div>
 
         <template is="dom-repeat" items="{{remixedfrom}}">
@@ -153,6 +154,7 @@
 
       <template is="dom-if" if="this.license" id="licenseTemplate">
         <paper-material class="license" elevation=3>
+          <h3>License</h3>
           <!-- https://wiki.creativecommons.org/wiki/RDFa -->
           <!-- All of this needs to be moved to template to be machine readable/searcable -->
           <div>
@@ -206,13 +208,13 @@
               </a>
             </template>
           </div>
-
+          <br>
           <span xmlns:dc="http://purl.org/dc/elements/1.1"
                 href="http://purl.org/dc/dcmitype/Text"
                 property="dc:title"
                 rel="dc:type"><em>{{license.title}}</em></span>
           <template is="dom-if" if="license.attributionName">
-            <span>authored by</span>
+            <span>published by</span>
             <template is="dom-if" if="{{license.attributionurl}}">
               <a xmlns:cc="http://creativecommons.org/ns#"
                  rel="cc:attributionURL"
@@ -224,7 +226,38 @@
                  property="cc:attributionName">{{license.attributionname}}</span>
             </template>
           </template>
-          is licensed as <span>{{license.licensetype}}</span>
+          is licensed under a
+          <template is="dom-if" if="{{isCCBYSA()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBY()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYND()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by-nd/4.0/">Creative Commons Attribution-NoDerivatives 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYNC()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYNCSA()}}">
+            <a rel="license"
+               class="nodecoration"
+               href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYNCND()}}">
+            <a rel="license"
+               class="nodecoration"
+               href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCC0()}}">
+            <a rel="license"
+               class="nodecoration"
+               href="http://creativecommons.org/publicdomain/mark/1.0/">Creative Commons Public Domain Mark 1.0</a>
+          </template>
         </paper-material>
       </template>
     </div>
@@ -259,7 +292,8 @@
     is: 'model-viewer-container',
 
     ready: function() {
-      this.publishdate = this.publishdate.toLocaleDateString();
+      var dateoptions = {year: 'numeric', month: 'long', day: 'numeric'};
+      this.publishdate = this.publishdate.toLocaleDateString('en-US', dateoptions);
       // unsafe html in element :(
       this.$.modeldescription.innerHTML = this.description;
     },
