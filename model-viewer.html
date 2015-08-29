@@ -135,12 +135,17 @@
 
       renderer.setSize(viewerwidth, viewerheight);
 
-      this.spinner.setAttribute('active', "");
+      this.spinner.setAttribute('active', true);
 
-      if (this.loadmethod == "http" || this.loadmethod == "json") {
-        var loader = new THREE.JSONLoader();
-        //loader.load(this.model, this.loadedmodel.bind(this));
+      if (this.loadmethod == "stl" || this.loadmethod == "json") {
+
+        if(this.loadmethod == "stl") {
+          var loader = new THREE.STLLoader();
+        } else if(this.loadmethod == "json") {
+          var loader = new THREE.JSONLoader();
+        }
         var loadedmodeldispatch = function(geometry, materials) {
+          console.log(geometry);
           this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials}}));
         };
 
