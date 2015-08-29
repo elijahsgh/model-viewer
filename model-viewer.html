@@ -145,8 +145,7 @@
           var loader = new THREE.JSONLoader();
         }
         var loadedmodeldispatch = function(geometry, materials) {
-          console.log(geometry);
-          this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials}}));
+          this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
         };
 
         loader.load(this.model, loadedmodeldispatch.bind(this));
@@ -202,9 +201,6 @@
       var materials = e.detail.materials;
       var geometry = e.detail.geometry;
 
-      // Purple muavey color 0xA824D6
-      // Grey blue eeeeff
-      // Hot pink #FD4F82 ?
       var material = new THREE.MeshPhongMaterial({ color: 0xaaaaff, shading: THREE.FlatShading });
       this.renderobject = new THREE.Mesh(geometry, material);
 
