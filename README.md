@@ -21,8 +21,11 @@ To use protocol buffers you will need to compile your model appropriately and pr
 
 _model-viewer_ is the core component for displaying a model.
 
-_model-viewer-container_ is an example container to get up and running with displaying models ASAP.
+_model-viewer-container_ is an example container to get up and running with displaying models quickly.
 
+## Additional notes
+
+The view is flipped as Z is up in the viewport to match the orientation of printers - be aware of this if you add meshes that were not originally designed for printing as they will render "face down".
 
 ## Fields
 
@@ -72,20 +75,6 @@ Example container to get you started.  Note that sections that are built as temp
 * `description`
 
   Description of the model.
-  
-* `license`
-
-  An optional Creative Commons license for the model.
-
-  `CC BY-SA`, `CC BY`, `CC BY-ND`, `CC BY-NC`, `CC BY-NC-SA`, `CC BY-NC-ND`, `CC0`
-
-* `remixes`
-
-  Unused and will be removed.
-
-* `remixedfrom`
-
-  Unused and will be removed.
 
 * `images`
 
@@ -98,3 +87,26 @@ Example container to get you started.  Note that sections that are built as temp
 * `downloadurl`
 
   URL the user can use to download the model.
+
+* `license`
+
+  An optional object representing a Creative Commons license for the model.
+
+  * `licensetype`
+
+    Supported licenses are:
+    `CC BY-SA`, `CC BY`, `CC BY-ND`, `CC BY-NC`, `CC BY-NC-SA`, `CC BY-NC-ND`, `CC0`
+
+    Version numbers and dates are currently not supported.
+
+  * `attributionurl`
+
+    A URL to the preferred source of the model.
+
+  * `attributionname`
+
+    The author's name.
+
+  * `title`
+
+    The work's original title.

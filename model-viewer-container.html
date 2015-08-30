@@ -146,10 +146,6 @@
 
         <div id="modeldescription">{{description}}</div>
 
-        <template is="dom-repeat" items="{{remixedfrom}}">
-          <h3>Remixed from</h3>
-          <div>{{item}}</div>
-        </template>
       </paper-material>
 
       <template is="dom-if" if="this.license" id="licenseTemplate">
@@ -413,12 +409,6 @@
       },
       license: {
         type: Object
-      },
-      remixes: {
-        type: Array
-      },
-      remixedfrom: {
-        type: Array
       },
       images: {
         type: Array
