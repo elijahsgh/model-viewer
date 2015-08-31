@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "homepage": "https://github.com/tamarintech/model-viewer",
   "authors": [
-    "TamarinTech <tamarin@tamarintech.com>"
+    "Tamarin Tech <tamarin@tamarintech.com>"
   ],
   "description": "TamarinTech's model-viewer for 3D printer media.",
   "main": "model-viewer.html",
