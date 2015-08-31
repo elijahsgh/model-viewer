@@ -11,6 +11,12 @@ ProtoBuf.js https://github.com/dcodeIO/ProtoBuf.js/
 Bower
 http://bower.io/
 
+## Demo
+
+There is a small demo available at TamarinTech https://tamarintech.com/modellibrary/view/demo_mace_toy
+
+Enjoy! :)
+
 ## First steps
 
 This project includes a bower.json that should help you install the dependencies.
