@@ -1,0 +1,427 @@
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<dom-module id="model-viewer-container">
+  <style>
+    :host {
+    }
+
+    .papercontainer {
+      margin-bottom: 1em;
+    }
+
+    .container {
+      position: relative;
+      margin-top: 1em;
+      margin-bottom: 1em;
+      padding: 1em;
+      @apply(--layout-vertical);
+    }
+
+    .modelcontainer {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .images {
+      padding: 1em;
+      margin-top: 1em;
+      margin-bottom: 1em;
+      text-align: center;
+    }
+
+    .imagebutton-img {
+      height: 100px;
+      width: auto;
+      margin: 5px;
+    }
+
+    .modeltoolbar {
+      --paper-toolbar-background: white;
+    }
+
+    .loadingspinner {
+      position: absolute;
+      top: 50%;
+      right: 50%;
+    }
+
+    .buttonloadmodel {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: blue;
+      color: white;
+      z-index: 10;
+    }
+
+    .buttondownload {
+      background: blue;
+      color: white;
+    }
+
+    .modeltitle {
+      color: black;
+      font-weight: bold;
+    }
+
+    .largeimagedialog {
+      padding: 2em;
+    }
+
+    #dialogimage {
+      margin: 4 auto;
+      height: auto;
+      width: 50vw;
+    }
+
+    .downloaddialog {
+      padding: 2em;
+    }
+
+    .details {
+      padding: 1em;
+      margin-bottom: 1em;
+    }
+
+    .description {
+      padding: 1em;
+      margin-bottom: 1em;
+    }
+
+    .license {
+      padding: 1em;
+      margin-bottom: 1em;
+    }
+
+    .contentwrapper {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    paper-material {
+      background-color: white;
+    }
+  </style>
+
+  <template>
+    <div class="container">
+      <div>
+        <paper-material class="papercontainer" elevation=3>
+          <div class="details">
+            <div>
+              <h3>{{title}}</h3>
+            </div>
+          </div>
+
+          <div class="modelcontainer">
+            <content></content>
+          </div>
+
+          <div class="images">
+            <template is="dom-repeat" items="{{images}}">
+              <img class="imagebutton-img" src="{{item.srcsm}}" data-dialog="largeimage" on-click="buttonhandler"></img>
+            </template>
+          </div>
+          <paper-toolbar class="modeltoolbar">
+            <span class="flex title modeltitle">{{title}}</span>
+            <paper-button data-dialog="downloaddialog" class="buttondownload" on-click="buttonhandler" role="button" raised>
+              <iron-icon icon="icons:file-download"></iron-icon>
+            </paper-button>
+          </paper-toolbar>
+        </paper-material>
+      </div>
+
+      <paper-material class="description" elevation=3>
+        <h3>Description</h3>
+        <div><span>{{title}}</span> was published by <span>{{author}}</span> on <span>{{publishdate}}</span></div>
+        <br>
+
+        <div id="modeldescription">{{description}}</div>
+
+      </paper-material>
+
+      <template is="dom-if" if="this.license" id="licenseTemplate">
+        <paper-material class="license" elevation=3>
+          <h3>License</h3>
+          <!-- https://wiki.creativecommons.org/wiki/RDFa -->
+          <!-- All of this needs to be moved to template to be machine readable/searcable -->
+          <div>
+            <template is="dom-if" if="{{isCCBYSA()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-sa/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBY()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYND()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nd/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nd/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYNC()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nc/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYNCSA()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCCBYNCND()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/licenses/by-nc-nd/4.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png"/>
+              </a>
+            </template>
+            <template is="dom-if" if="{{isCC0()}}">
+              <a rel="license"
+                 class="nodecoration"
+                 href="http://creativecommons.org/publicdomain/mark/1.0/">
+                 <img alt="Creative Commons License" style="border-width:0" src="https://licensebuttons.net/l/publicdomain/88x31.png"/>
+              </a>
+            </template>
+          </div>
+          <br>
+          <span xmlns:dc="http://purl.org/dc/elements/1.1"
+                href="http://purl.org/dc/dcmitype/Text"
+                property="dc:title"
+                rel="dc:type"><em>{{license.title}}</em></span>
+          <template is="dom-if" if="license.attributionName">
+            <span>published by</span>
+            <template is="dom-if" if="{{license.attributionurl}}">
+              <a xmlns:cc="http://creativecommons.org/ns#"
+                 rel="cc:attributionURL"
+                 href="{{license.attributionurl}}"
+                 property="cc:attributionName">{{license.attributionname}}</a>
+            </template>
+            <template is="dom-if" if="{{!license.attributionurl}}">
+              <span xmlns:cc="http://creativecommons.org/ns#"
+                 property="cc:attributionName">{{license.attributionname}}</span>
+            </template>
+          </template>
+          is licensed under a
+          <template is="dom-if" if="{{isCCBYSA()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBY()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYND()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by-nd/4.0/">Creative Commons Attribution-NoDerivatives 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYNC()}}">
+            <a rel="license"
+               href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYNCSA()}}">
+            <a rel="license"
+               class="nodecoration"
+               href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCCBYNCND()}}">
+            <a rel="license"
+               class="nodecoration"
+               href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>
+          </template>
+          <template is="dom-if" if="{{isCC0()}}">
+            <a rel="license"
+               class="nodecoration"
+               href="http://creativecommons.org/publicdomain/mark/1.0/">Creative Commons Public Domain Mark 1.0</a>
+          </template>
+        </paper-material>
+      </template>
+    </div>
+
+    <paper-dialog id="downloaddialog" class="downloaddialog">
+      <h2>Download model</h2>
+      <paper-dialog-scrollable>
+        You agree to use the downloaded asset(s) within the constraints of the license(s).
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss raised>Cancel</paper-button>
+        <paper-button dialog-confirm on-click="confirmdownload" raised>Download</paper-button>
+      </div>
+    </paper-dialog>
+
+    <paper-dialog id="largeimage" class="largeimagedialog">
+      <div class="buttons">
+        <paper-button dialog-confirm raised>
+          <iron-icon icon="icons:close"></iron-icon>
+        </paper-button>
+      </div>
+      <div id="dialogimage">
+        <img class="largeimage"></img>
+      </div>
+    </paper-dialog>
+
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'model-viewer-container',
+
+    ready: function() {
+      var dateoptions = {year: 'numeric', month: 'long', day: 'numeric'};
+      this.publishdate = this.publishdate.toLocaleDateString('en-US', dateoptions);
+      // unsafe html in element :(
+      this.$.modeldescription.innerHTML = this.description;
+    },
+
+    attached: function() {
+    },
+
+    confirmdownload: function() {
+      window.open(this.downloadurl);
+    },
+
+    isCCBYSA: function() {
+      if(this.license.licensetype == 'CC BY-SA')
+        return true;
+      return false;
+    },
+
+    isCCBY: function() {
+      if(this.license.licensetype == 'CC BY')
+        return true;
+      return false;
+    },
+
+    isCCBYND: function() {
+      if(this.license.licensetype == 'CC BY-ND')
+        return true;
+      return false;
+    },
+
+    isCCBYNC: function() {
+      if(this.license.licensetype == 'CC BY-NC')
+        return true;
+      return false;
+    },
+
+    isCCBYNCSA: function() {
+      if(this.license.licensetype == 'CC BY-NC-SA')
+        return true;
+      return false;
+    },
+
+    isCCBYNCND: function() {
+      if(this.license.licensetype == 'CC BY-NC-ND')
+        return true;
+      return false;
+    },
+
+    isCC0: function() {
+      if(this.license.licensetype == 'CC0')
+        return true;
+      return false;
+    },
+
+    buttonhandler: function(e) {
+      if(e.target) {
+        document.clicked = e.target;
+        var targetdialog = null;
+
+        if(e.target.hasAttribute('data-dialog')) {
+          targetdialog = e.target.getAttribute('data-dialog');
+        } else if(e.target.parentElement.hasAttribute('data-dialog')) {
+          targetdialog = e.target.parentElement.getAttribute('data-dialog');
+        } else if(e.target.parentElement.parentElement.hasAttribute('data-dialog')) {
+          targetdialog = e.target.parentElement.parentElement.getAttribute('data-dialog');
+        }
+
+        if(targetdialog) {
+          var dialogs = this.getElementsByTagName('paper-dialog');
+
+          for(var i = 0; i < dialogs.length ; i++) {
+            if(dialogs[i].id == targetdialog) {
+              if(dialogs[i].id == "largeimage") {
+                newimg = document.createElement("img");
+
+                var tgtimgsrc = e.target.src;
+                var tgtimgalt = e.target.alt;
+
+                for(var j = 0; j < this.images.length; j++) {
+                  if(e.target.src.endsWith(this.images[j].srcsm)) {
+                    if(this.images[j].srclg) {
+                      tgtimgsrc = this.images[j].srclg;
+                    }
+                    break;
+                  }
+                }
+
+                newimg.src = tgtimgsrc;
+                newimg.alt = tgtimgalt;
+                newimg.style.height = "auto";
+                newimg.style.width = "100%";
+
+                for(var j = 0; j < dialogs[i].children.length; j++) {
+                  if(dialogs[i].children[j].id == "dialogimage") {
+                    dialogs[i].children[j].innerHTML = "";
+                    dialogs[i].children[j].appendChild(newimg);
+                    break;
+                  }
+                }
+              }
+              dialogs[i].toggle();
+              break;
+            }
+          }
+        }
+      }
+    },
+
+    properties: {
+      title: {
+        type: String
+      },
+      author: {
+        type: String
+      },
+      publishdate: {
+        type: Date
+      },
+      license: {
+        type: Object
+      },
+      images: {
+        type: Array
+      },
+      previewimg: {
+        type: String
+      },
+      downloadurl: {
+        type: String
+      },
+      description: {
+        type: String
+      }
+    }
+  });
+</script>

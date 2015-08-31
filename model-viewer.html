@@ -1,0 +1,290 @@
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+
+<dom-module id="model-viewer">
+  <style>
+    :host {
+    }
+
+    .placeholderimg {
+      width: 100%;
+      height: auto;
+    }
+
+    .viewercontainer {
+      position: relative;
+      margin: 0 10%;
+      padding: 0;
+    }
+
+    .loadingspinner {
+      position: absolute;
+      top: 50%;
+      right: 50%;
+      z-index: 10;
+    }
+
+    .buttonloadmodel {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: blue;
+      color: white;
+      z-index: 10;
+    }
+  </style>
+
+  <template>
+      <div class="viewercontainer" on-scenerendered="scenerendered" on-loadedmodel="loadedmodel">
+        <img class="placeholderimg" src="{{previewimg}}"/>
+        <paper-button class="buttonloadmodel" on-click="loadmodel" raised>
+          <iron-icon icon="icons:3d-rotation"></iron-icon>
+        </paper-button>
+        <paper-spinner class="loadingspinner" inactive></paper-spinner>
+      </div>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'model-viewer',
+
+    ready: function() {
+    },
+
+    attached: function() {
+    },
+
+    loadmodel: function() {
+      var renderel = this.getElementsByClassName("viewercontainer")[0];
+
+      if(!Detector.webgl) {
+        var glerror = Detector.getWebGLErrorMessage();
+        glerror.style.padding = "";
+        glerror.style.margin = "";
+        glerror.style.width = "100%";
+
+        renderel.innerHTML = '';
+        renderel.appendChild(glerror);
+
+        return;
+      }
+
+      var spinner = this.getElementsByClassName("loadingspinner")[0];
+
+      this.renderel = renderel;
+      this.spinner = spinner;
+
+      // Keep square by using width twice
+      var viewerheight = renderel.offsetWidth;
+      var viewerwidth = renderel.offsetWidth;
+      var aspectratio = viewerwidth / viewerheight;
+
+      this.viewerheight = viewerheight;
+      this.viewerwidth = viewerwidth;
+      this.aspectratio = aspectratio;
+
+      var scene = new THREE.Scene();
+      this.scene = scene;
+
+      var camera = new THREE.PerspectiveCamera(60, this.aspectratio, 0.1, 1000);
+      this.camera = camera;
+
+      scene.fog = new THREE.Fog(0xeeeeee, 1, 500);
+
+      var lights = {"camera": null,
+                    "ambient": null};
+
+      this.lights = lights;
+
+      lights.camera = new THREE.DirectionalLight(0x606060);
+      lights.camera.intensity = 1.0;
+      lights.ambient = new THREE.AmbientLight(0x505050);
+
+      scene.add(lights.camera);
+      scene.add(lights.ambient);
+
+      // Z is *up* for 3D printing! :)
+      camera.up = new THREE.Vector3(0, 0, 1);
+
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+      camera.updateProjectionMatrix();
+
+      var renderer = new THREE.WebGLRenderer({antialias: true});
+      this.renderer = renderer;
+
+      var render = function() {
+        this.lights.camera.position.set(this.camera.position.x,
+                                        this.camera.position.y,
+                                        this.camera.position.z);
+
+        this.renderer.render(this.scene, this.camera);
+        this.renderer.capture = this.renderer.domElement.toDataURL();
+      }
+
+      var controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.damping = 0.2;
+      controls.addEventListener('change', render.bind(this));
+      this.controls = controls;
+
+      renderer.setSize(viewerwidth, viewerheight);
+
+      this.spinner.setAttribute('active', true);
+
+      if (this.loadmethod == "stl" || this.loadmethod == "json") {
+
+        if(this.loadmethod == "stl") {
+          var loader = new THREE.STLLoader();
+        } else if(this.loadmethod == "json") {
+          var loader = new THREE.JSONLoader();
+        }
+        var loadedmodeldispatch = function(geometry, materials) {
+          this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
+        };
+
+        loader.load(this.model, loadedmodeldispatch.bind(this));
+      } else if (this.loadmethod == "protobuf") {
+        var xhr = new XMLHttpRequest();
+        xhr.renderel = this.renderel;
+
+        xhr.open("GET", this.proto, true);
+
+        xhr.onload = function(e) {
+          console.log("Loaded proto buffer definition.");
+
+          var ProtoBuf = dcodeIO.ProtoBuf;
+          var MeshMsg = ProtoBuf.loadJson(this.response).build("meshthreejs").MeshThreeJS;
+
+          var pb_xhr = ProtoBuf.Util.XHR();
+
+          pb_xhr.open("GET", this.modelviewer.model, true);
+
+          pb_xhr.responseType = "arraybuffer";
+
+          pb_xhr.onload = function(e) {
+            console.log("Loaded protobuffer.");
+
+            var msg = this.MeshMsg.decode(this.response);
+
+            var loader = new THREE.JSONLoader();
+            var m = loader.parse(msg);
+            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'name': this.modelname, 'materials': m.materials, 'geometry': m.geometry}});
+            this.renderel.dispatchEvent(loadedModelEvent);
+          }
+
+          pb_xhr.MeshMsg = MeshMsg;
+          pb_xhr.renderel = this.renderel;
+          pb_xhr.modelname = this.modelname
+          pb_xhr.send();
+
+        }
+
+        xhr.modelviewer = {model: this.model};
+        xhr.send();
+
+      } else {
+        console.log("Element has weird loadmethod: " + this.loadmethod);
+      }
+
+      window.addEventListener("resize", this.viewerresized.bind(this));
+    },
+
+    loadedmodel: function(e) {
+      console.log("Loaded model event");
+
+      var materials = e.detail.materials;
+      var geometry = e.detail.geometry;
+
+      var material = new THREE.MeshPhongMaterial({ color: 0xaaaaff, shading: THREE.FlatShading });
+      this.renderobject = new THREE.Mesh(geometry, material);
+
+      this.renderobject.name = e.detail.name || this.modelname;
+
+      this.scene.add(this.renderobject);
+
+      var boundingbox = new THREE.Box3().setFromObject(this.renderobject);
+
+      var objectcenter = boundingbox.center();
+
+      var objectfloorgrid = new THREE.GridHelper(Math.round((Math.max(boundingbox.size().z,
+                                                 boundingbox.size().x))),
+                                                 10.0);
+
+      // Turn floor to match Z-up orientation
+      objectfloorgrid.rotation.x = 90*(Math.PI/180);
+
+      objectfloorgrid.position.x = boundingbox.center().x;
+      objectfloorgrid.position.y = boundingbox.center().y;
+      objectfloorgrid.position.z = boundingbox.min.z;
+
+      this.scene.add(objectfloorgrid);
+
+      this.camera.position.z = boundingbox.max.z;
+      this.camera.position.y = boundingbox.max.y*-4;
+      this.camera.position.x = 0;
+
+      this.camera.lookAt(objectcenter);
+
+      this.controls.target = objectcenter;
+
+      this.lights.camera.position.set(this.camera.position.x,
+                                      this.camera.position.y,
+                                      this.camera.position.z);
+
+      this.renderer.render(this.scene, this.camera);
+
+      this.renderel.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
+    },
+
+    scenerendered: function(e) {
+      console.log("Scene rendered!");
+
+      // Debug
+      document.modelviewerscene = this.scene;
+      this.spinner.removeAttribute('active');
+      this.renderel.innerHTML = "";
+      this.modelscene = e.detail;
+
+      this.renderel.innerHTML = '';
+      this.renderel.appendChild(e.detail.renderElement);
+    },
+
+    viewerresized: function(e) {
+      var renderwidth = this.renderel.offsetWidth;
+      var renderheight = this.renderel.offsetWidth;
+
+      // Keep squared
+      this.renderwidth = renderwidth;
+      this.renderheight = renderheight;
+
+      this.aspectratio = renderwidth / renderheight;
+
+      if(this.renderer)
+        this.renderer.setSize(renderwidth, renderheight);
+    },
+
+    properties: {
+      model: {
+        type: String
+      },
+      modelname: {
+        type: String
+      },
+      loadmethod: {
+        type: String
+      },
+      proto: {
+        type: String
+      },
+      previewimg: {
+        type: String
+      }
+    }
+  });
+</script>
