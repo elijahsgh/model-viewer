@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Model Viewer Demo</title>
+    <meta content='width=device-width, initial-scale=1.0, minimum-scale=1.0' name='viewport'>
+
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+
+    <script src="bower_components/three.js/build/three.js"></script>
+    <script src="bower_components/three.js/examples/js/Detector.js"></script>
+    <script src="bower_components/three.js/examples/js/loaders/STLLoader.js"></script>
+    <script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+
+    <script src="bower_components/bytebuffer/dist/ByteBufferAB.js"></script>
+    <script src="bower_components/protobuf/dist/ProtoBuf.js"></script>
+
+    <!-- Fixup for demo, not normally required -->
+    <link rel="import" href="bower_components/paper-styles/paper-styles.html">
+    <link rel="import" href="bower_components/paper-item/paper-item.html">
+    <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+    <link rel="import" href="bower_components/paper-button/paper-button.html">
+    <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
+    <link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+    <link rel="import" href="bower_components/iron-icons/iron-icons.html">
+    <!-- End Fixup -->
+
+    <!-- Demo fixup - this would normally be prefixed with your component path
+      ie: bower_components/model-viewer/ -->
+    <link rel="import" href="model-viewer.html">
+    <link rel="import" href="model-viewer-container.html">
+  </head>
+  <style>
+    body {
+      background-color: #dddddd;
+    }
+
+    div.container {
+      width: 800px;
+      margin: auto;
+    }
+  </style>
+  <body>
+    <div class="container">
+      <model-viewer-container author='Tamarin'
+                              description='One half of a <strong>mace</strong> toy!'
+                              downloadurl='demo/demo.stl'
+                              images='[{"alt": "Demo model image",
+                                        "srclg": "demo/demo.stl.png",
+                                        "srcsm": "demo/demo.stl.png"}]'
+                              license='{"licensetype": "CC BY-SA",
+                                        "attributionurl": "",
+                                        "attributionname": "TamarinTech",
+                                        "title": "Demo Object"}'
+                              publishdate='2015-07-20T19:00:00Z'
+                              title='Demo Object'>
+        <model-viewer loadmethod='stl'
+                      model='demo/demo.stl'
+                      modelname='Demo STL'
+                      previewimg='demo/demo.stl.png'></model-viewer>
+      </model-viewer-container>
+    </div>
+  </body>
+</html>

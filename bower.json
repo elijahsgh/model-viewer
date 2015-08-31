@@ -1,0 +1,32 @@
+{
+  "name": "tamarintech-model-viewer",
+  "version": "0.0.1",
+  "homepage": "https://github.com/tamarintech/model-viewer",
+  "authors": [
+    "Tamarin Tech <tamarin@tamarintech.com>"
+  ],
+  "description": "TamarinTech's model-viewer for 3D printer media.",
+  "main": "model-viewer.html",
+  "keywords": [
+    "3D",
+    "Printing",
+    "3D",
+    "models",
+    "STL",
+    "ProtoBufs"
+  ],
+  "license": "GPL-3.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "paper-elements": "Polymerelements/paper-elements#~1.0.1",
+    "polymer": "~1.1.2",
+    "protobuf": "~4.0.0",
+    "three.js": "threejs#r71"
+  }
+}

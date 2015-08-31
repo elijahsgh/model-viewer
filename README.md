@@ -17,7 +17,7 @@ This project includes a bower.json that should help you install the dependencies
 
 To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.
 
-## Starting the demo
+## Starting the included demo
 
 This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.
 
@@ -26,6 +26,18 @@ If you have access to Python the simplest way to view the demo is to use somethi
 `python -m SimpleHTTPServer`
 
 You should then be able to browse to localhost:8000 (or similar) to view the included demo.
+
+## Live Demo
+
+There is a small demo available at TamarinTech https://tamarintech.com/modellibrary/view/demo_mace_toy
+
+Enjoy! :)
+
+## First steps
+
+This project includes a bower.json that should help you install the dependencies.
+
+To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.  An encoded model is significantly more efficient than a generic STL - most STLs have up to an 80% reduction (from 5M binary STL to 1M encoded json).
 
 ## Components
 
@@ -82,41 +94,55 @@ Example container to get you started.  Note that sections that are built as temp
 
   `this.publishdate.toLocaleDateString('en-US', dateoptions);`
 
-* `description`
+* `description` String
 
   Description of the model.
 
-* `images`
+* `images` Array
 
   A JSON array of images to be displayed below the render view.
 
-* `previewimg`
+  Example: `[{"alt": "Mace Toy Image", "srclg": "models/mace_toy/mace_toy.stl.png", "srcsm": "models/mace_toy/mace_toy.stl.png"}]`
+
+  * `alt` String
+
+    The alt text for the image.
+
+  * `srclg` String
+
+    The image used in the viewer dialog.  Should be a higher quality than srcsm.
+
+  * `srcsm` String
+
+    The small image that appears below the viewer.
+
+* `previewimg` String
 
   A preview image used before the model is loaded.
 
-* `downloadurl`
+* `downloadurl` String
 
   URL the user can use to download the model.
 
-* `license`
+* `license` Object
 
   An optional object representing a Creative Commons license for the model.
 
-  * `licensetype`
+  * `licensetype` String
 
     Supported licenses are:
     `CC BY-SA`, `CC BY`, `CC BY-ND`, `CC BY-NC`, `CC BY-NC-SA`, `CC BY-NC-ND`, `CC0`
 
     Version numbers and dates are currently not supported.
 
-  * `attributionurl`
+  * `attributionurl` String
 
     A URL to the preferred source of the model.
 
-  * `attributionname`
+  * `attributionname` String
 
     The author's name.
 
-  * `title`
+  * `title` String
 
     The work's original title.
