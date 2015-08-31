@@ -17,6 +17,16 @@ This project includes a bower.json that should help you install the dependencies
 
 To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.
 
+## Starting the demo
+
+This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.
+
+If you have access to Python the simplest way to view the demo is to use something like the following from within the model-viewer directory:
+
+`python -m SimpleHTTPServer`
+
+You should then be able to browse to localhost:8000 (or similar) to view the included demo.
+
 ## Components
 
 _model-viewer_ is the core component for displaying a model.
