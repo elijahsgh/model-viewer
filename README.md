@@ -21,7 +21,7 @@ This project includes a bower.json that should help you install the dependencies
  `"model-viewer": https://github.com/tamarintech/model-viewer.git#master`
 
 
-To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.
+To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.  An encoded model is significantly more efficient than a generic STL - most STLs have up to an 80% reduction (from 5M binary STL to 1M encoded json).
 
 ## Starting the included demo
 
@@ -38,18 +38,6 @@ You should then be able to browse to localhost:8000 (or similar) to view the inc
 There is a small demo available at TamarinTech https://tamarintech.com/modellibrary/view/demo_mace_toy
 
 Enjoy! :)
-
-## First steps
-
-This project includes a bower.json that should help you install the dependencies.
-
-To get started you can install directly from the bower registry with `bower install model-viewer`
-
-You can also add this repository to your bower.json directly from github:
-
-`https://github.com/tamarintech/model-viewer.git#master`
-
-To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.  An encoded model is significantly more efficient than a generic STL - most STLs have up to an 80% reduction (from 5M binary STL to 1M encoded json).
 
 ## Components
 
