@@ -1,6 +1,6 @@
 {
-  "name": "tamarintech-model-viewer",
-  "version": "0.0.1",
+  "name": "model-viewer",
+  "version": "0.0.3",
   "homepage": "https://github.com/tamarintech/model-viewer",
   "authors": [
     "Tamarin Tech <tamarin@tamarintech.com>"

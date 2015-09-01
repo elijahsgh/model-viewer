@@ -8,18 +8,24 @@ three.js https://github.com/mrdoob/three.js/
 
 ProtoBuf.js https://github.com/dcodeIO/ProtoBuf.js/
 
-Bower
-http://bower.io/
+Bower http://bower.io/
 
 ## First steps
 
-This project includes a bower.json that should help you install the dependencies.
+This project includes a bower.json that should help you install the dependencies. You can install directly from the bower repository with:
+
+ `bower install model-viewer`
+
+ Alternatively, you can install directly against git by adding it to an existing bower.json:
+
+ `"model-viewer": https://github.com/tamarintech/model-viewer.git#master`
+
 
 To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.
 
 ## Starting the included demo
 
-This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.
+This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.  You will need to serve the demo from a web server.
 
 If you have access to Python the simplest way to view the demo is to use something like the following from within the model-viewer directory:
 
@@ -36,6 +42,12 @@ Enjoy! :)
 ## First steps
 
 This project includes a bower.json that should help you install the dependencies.
+
+To get started you can install directly from the bower registry with `bower install model-viewer`
+
+You can also add this repository to your bower.json directly from github:
+
+`https://github.com/tamarintech/model-viewer.git#master`
 
 To use protocol buffers you will need to compile your model appropriately and provide a matching proto file.  An encoded model is significantly more efficient than a generic STL - most STLs have up to an 80% reduction (from 5M binary STL to 1M encoded json).
 
