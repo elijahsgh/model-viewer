@@ -87,10 +87,14 @@ Core component for displaying and interacting with the view of the model.
 
    Location of the proto file used to generate the protobuf version of the model if using protocol buffers.
 
+* `backgroundcolor`, `gridcolor`, `modelcolor`:
+
+   The colors you want for the respective render.  Currently, these should be in hex that three.js understands - ex: `0xffffff` is white. :)
+
 
 ### model-viewer-container
 
-Example container to get you started.  Note that sections that are built as templates are not machine readable - for example, the licensing section includes RDFa but, as part of a Polymer template, is not indexable or searchable on the web and is only provided for end-user informational purposes.
+Example container to get you started.  Note that sections that are built as templates are not machine readable - for example, the licensing section includes RDFa but, as part of a Polymer template, is not indexable or searchable on the web and is only provided for end-user informational purposes.  This elements wraps the model-viewer element.  See index.html for an example.
 
 * `title` String
 
@@ -158,3 +162,21 @@ Example container to get you started.  Note that sections that are built as temp
   * `title` String
 
     The work's original title.
+
+## Extras
+
+### Generating a preview Image
+
+For convenience, a data URI is generated from the scene and appended to the renderer instance.  You can access this data via dev tools, or your instance with something similar to the example below.
+
+`document.getElementsByTagName('model-viewer')[0].renderer.capture`
+
+Note that this is only available after the scene has been rendered (immediately after the 3D View button is clicked) and is updated after each scene update.
+
+## Release notes
+
+0.0.1: Initial release!
+
+0.0.2: Documentation, project packaging.
+
+0.0.3: User-configurable colors.
