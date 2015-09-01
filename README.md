@@ -176,5 +176,7 @@ Note that this is only available after the scene has been rendered (immediately 
 ## Release notes
 
 0.0.1: Initial release!
+
 0.0.2: Documentation, project packaging.
+
 0.0.3: User-configurable colors.
