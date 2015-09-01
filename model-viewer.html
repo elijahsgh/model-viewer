@@ -128,11 +128,6 @@
         this.renderer.capture = this.renderer.domElement.toDataURL();
       }
 
-      var controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.damping = 0.2;
-      controls.addEventListener('change', render.bind(this));
-      this.controls = controls;
-
       renderer.setSize(viewerwidth, viewerheight);
 
       this.spinner.setAttribute('active', true);
@@ -192,6 +187,11 @@
         console.log("Element has weird loadmethod: " + this.loadmethod);
       }
 
+      var controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.damping = 0.2;
+      controls.addEventListener('change', render.bind(this));
+      this.controls = controls;
+
       window.addEventListener("resize", this.viewerresized.bind(this));
     },
 
@@ -201,7 +201,15 @@
       var materials = e.detail.materials;
       var geometry = e.detail.geometry;
 
-      var material = new THREE.MeshPhongMaterial({ color: 0xaaaaff, shading: THREE.FlatShading });
+      console.log(this.modelcolor);
+
+      var modelcolor = this.modelcolor === undefined ? 0xaaaaff : this.modelcolor;
+      var gridcolor = this.gridcolor === undefined ? 0xffffff : this.gridcolor;
+      var backgroundcolor = this.backgroundcolor === undefined ? 0x000000 : this.backgroundcolor;
+
+      this.renderer.setClearColor(backgroundcolor);
+
+      var material = new THREE.MeshPhongMaterial({ color: modelcolor, shading: THREE.FlatShading });
       this.renderobject = new THREE.Mesh(geometry, material);
 
       this.renderobject.name = e.detail.name || this.modelname;
@@ -212,9 +220,11 @@
 
       var objectcenter = boundingbox.center();
 
-      var objectfloorgrid = new THREE.GridHelper(Math.round((Math.max(boundingbox.size().z,
+      var objectfloorgrid = new THREE.GridHelper(111+Math.round((Math.max(boundingbox.size().z,
                                                  boundingbox.size().x))),
                                                  10.0);
+
+      objectfloorgrid.setColors(gridcolor, gridcolor);
 
       // Turn floor to match Z-up orientation
       objectfloorgrid.rotation.x = 90*(Math.PI/180);
@@ -244,6 +254,8 @@
 
     scenerendered: function(e) {
       console.log("Scene rendered!");
+
+      this.renderer.capture = this.renderer.domElement.toDataURL();
 
       // Debug
       document.modelviewerscene = this.scene;
@@ -284,6 +296,15 @@
       },
       previewimg: {
         type: String
+      },
+      backgroundcolor: {
+        type: Number
+      },
+      gridcolor: {
+        type: Number
+      },
+      modelcolor: {
+        type: Number
       }
     }
   });
