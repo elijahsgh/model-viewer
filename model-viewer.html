@@ -1,6 +1,7 @@
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../paper-spinner/paper-spinner.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../paper-styles/paper-styles.html">
@@ -36,11 +37,46 @@
 
     .buttonloadmodel {
       position: absolute;
-      right: 10px;
+      left: 10px;
       top: 10px;
       background: blue;
       color: white;
       z-index: 10;
+    }
+
+    .viewertoolbarcontainer {
+      position: relative;
+      margin: 0 10%;
+      padding: 0;
+    }
+
+    @media (max-width: 900px) {
+      .viewertoolbarcontainer {
+        display: none;
+      }
+    }
+
+    .viewertoolbar {
+      --paper-toolbar-background: white;
+    }
+
+    .viewertoolbarbuttons {
+      background: blue;
+      color: white;
+      margin-right: 1em;
+    }
+
+    .viewertoolbartoggles {
+
+    }
+
+    paper-button[disabled] {
+      background-color: gray;
+    }
+
+    .viewertoolbarlabels {
+      color: blue;
+      margin: 0 0.5em;
     }
   </style>
 
@@ -49,9 +85,20 @@
         <img class="placeholderimg" src="{{previewimg}}"/>
         <paper-button class="buttonloadmodel" on-click="loadmodel" raised>
           <iron-icon icon="icons:3d-rotation"></iron-icon>
-        </paper-button>
+        </paper-button class="viewertoolbar">
         <paper-spinner class="loadingspinner" inactive></paper-spinner>
       </div>
+    </div>
+    <div class="viewertoolbarcontainer">
+      <paper-toolbar class="viewertoolbar">
+        <paper-button class="viewertoolbarbuttons" raised disabled>
+          <iron-icon icon="icons:camera-enhance" on-click="onclickbtncapture"></iron-icon>
+        </paper-button>
+        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" disabled></paper-toggle-button>
+        <span class="viewertoolbarlabels">Wireframe</span>
+        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked disabled></paper-toggle-button>
+        <span class="viewertoolbarlabels">Solid</span>
+      </paper-toolbar>
     </div>
   </template>
 </dom-module>
@@ -79,6 +126,17 @@
         renderel.appendChild(glerror);
 
         return;
+      }
+
+      var toolbarbuttons = this.getElementsByClassName('viewertoolbarbuttons');
+      var toolbartoggles = this.getElementsByClassName('viewertoolbartoggles');
+
+      for(var i = 0; i < toolbarbuttons.length; i++) {
+        toolbarbuttons[i].removeAttribute('disabled');
+      }
+
+      for(var i = 0; i < toolbartoggles.length; i++) {
+        toolbartoggles[i].removeAttribute('disabled');
       }
 
       var spinner = this.getElementsByClassName("loadingspinner")[0];
@@ -131,7 +189,6 @@
                                         this.camera.position.z);
 
         this.renderer.render(this.scene, this.camera);
-        this.renderer.capture = this.renderer.domElement.toDataURL();
       }
 
       renderer.setSize(viewerwidth, viewerheight);
@@ -207,27 +264,30 @@
       var materials = e.detail.materials;
       var geometry = e.detail.geometry;
 
-      console.log(this.modelcolor);
-
       var modelcolor = this.modelcolor === undefined ? 0xaaaaff : this.modelcolor;
       var gridcolor = this.gridcolor === undefined ? 0xffffff : this.gridcolor;
       var backgroundcolor = this.backgroundcolor === undefined ? 0x000000 : this.backgroundcolor;
 
       this.renderer.setClearColor(backgroundcolor);
 
-      var material = new THREE.MeshPhongMaterial({ color: modelcolor, shading: THREE.FlatShading });
-      this.renderobject = new THREE.Mesh(geometry, material);
+      var matsolid = new THREE.MeshPhongMaterial({ color: modelcolor, shading: THREE.FlatShading });
+
+      this.matsolid = matsolid;
+
+      this.renderobject = new THREE.Mesh(geometry, matsolid);
 
       this.renderobject.name = e.detail.name || this.modelname;
 
       this.scene.add(this.renderobject);
 
+      this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, modelcolor);
+      this.renderobjectwireframe.name = this.renderobject.name + "-wireframe";
+
       var boundingbox = new THREE.Box3().setFromObject(this.renderobject);
 
       var objectcenter = boundingbox.center();
 
-      var objectfloorgrid = new THREE.GridHelper(111+Math.round((Math.max(boundingbox.size().z,
-                                                 boundingbox.size().x))),
+      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().z, boundingbox.size().x)/10)*10,
                                                  10.0);
 
       objectfloorgrid.setColors(gridcolor, gridcolor);
@@ -263,8 +323,6 @@
 
       this.renderer.capture = this.renderer.domElement.toDataURL();
 
-      // Debug
-      document.modelviewerscene = this.scene;
       this.spinner.removeAttribute('active');
       this.renderel.innerHTML = "";
       this.modelscene = e.detail;
@@ -285,6 +343,40 @@
 
       if(this.renderer)
         this.renderer.setSize(renderwidth, renderheight);
+    },
+
+    onclickbtncapture: function(e) {
+      this.renderer.render(this.scene, this.camera);
+      this.renderer.capture = this.renderer.domElement.toDataURL();
+
+      var downloadlink = document.createElement('a');
+      downloadlink.download = this.modelname + ".png";
+      downloadlink.href = this.renderer.capture;
+      downloadlink.click();
+    },
+
+    onclickbtnsolid: function (e) {
+      this.togglesolid ^= true;
+
+      if(this.togglesolid) {
+        this.scene.add(this.renderobject);
+      } else {
+        this.scene.remove(this.renderobject);
+      }
+
+      this.renderer.render(this.scene, this.camera);
+    },
+
+    onclickbtnwireframe: function (e) {
+      this.togglewireframe ^= true;
+
+      if(this.togglewireframe) {
+        this.scene.add(this.renderobjectwireframe);
+      } else {
+        this.scene.remove(this.renderobjectwireframe);
+      }
+
+      this.renderer.render(this.scene, this.camera);
     },
 
     properties: {
@@ -311,6 +403,14 @@
       },
       modelcolor: {
         type: Number
+      },
+      togglesolid: {
+        type: Boolean,
+        value: true
+      },
+      togglewireframe: {
+        type: Boolean,
+        value: false
       }
     }
   });
