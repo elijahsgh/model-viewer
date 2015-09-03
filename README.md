@@ -79,6 +79,14 @@ Core component for displaying and interacting with the view of the model.
 
    The colors you want for the respective render.  Currently, these should be in hex that three.js understands - ex: `0xffffff` is white. :)
 
+* `togglesolid` Boolean
+
+  Render the solid geometry of the object.
+
+* `togglewireframe` Boolean
+
+  Render the wireframe for the object.
+
 
 ### model-viewer-container
 
@@ -155,6 +163,9 @@ Example container to get you started.  Note that sections that are built as temp
 
 ### Generating a preview Image
 
+**Version 0.0.4**: A toolbar button has been added for taking pictures of the rendered scene.
+
+**Prior to version 0.0.4**:
 For convenience, a data URI is generated from the scene and appended to the renderer instance.  You can access this data via dev tools, or your instance with something similar to the example below.
 
 `document.getElementsByTagName('model-viewer')[0].renderer.capture`

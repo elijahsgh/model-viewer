@@ -1,10 +1,12 @@
+<link rel="import" href="../paper-styles/paper-styles.html">
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../paper-spinner/paper-spinner.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+
 <script src="../three.js/build/three.min.js"></script>
 <script src="../three.js/examples/js/controls/OrbitControls.js"></script>
 <script src="../three.js/examples/js/Detector.js"></script>
@@ -37,7 +39,7 @@
 
     .buttonloadmodel {
       position: absolute;
-      left: 10px;
+      right: 10px;
       top: 10px;
       background: blue;
       color: white;
@@ -67,7 +69,6 @@
     }
 
     .viewertoolbartoggles {
-
     }
 
     paper-button[disabled] {
@@ -77,6 +78,7 @@
     .viewertoolbarlabels {
       color: blue;
       margin: 0 0.5em;
+      display: inline;
     }
   </style>
 
@@ -89,17 +91,17 @@
         <paper-spinner class="loadingspinner" inactive></paper-spinner>
       </div>
     </div>
-    <div class="viewertoolbarcontainer">
-      <paper-toolbar class="viewertoolbar">
+    <iron-collapse class="toolbarcollapse">
+      <div class="viewertoolbarcontainer">
         <paper-button class="viewertoolbarbuttons" raised disabled>
           <iron-icon icon="icons:camera-enhance" on-click="onclickbtncapture"></iron-icon>
         </paper-button>
-        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" disabled></paper-toggle-button>
+        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
         <span class="viewertoolbarlabels">Wireframe</span>
-        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked disabled></paper-toggle-button>
+        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
         <span class="viewertoolbarlabels">Solid</span>
-      </paper-toolbar>
-    </div>
+      </div>
+    </iron-collapse>
   </template>
 </dom-module>
 
@@ -126,17 +128,6 @@
         renderel.appendChild(glerror);
 
         return;
-      }
-
-      var toolbarbuttons = this.getElementsByClassName('viewertoolbarbuttons');
-      var toolbartoggles = this.getElementsByClassName('viewertoolbartoggles');
-
-      for(var i = 0; i < toolbarbuttons.length; i++) {
-        toolbarbuttons[i].removeAttribute('disabled');
-      }
-
-      for(var i = 0; i < toolbartoggles.length; i++) {
-        toolbartoggles[i].removeAttribute('disabled');
       }
 
       var spinner = this.getElementsByClassName("loadingspinner")[0];
@@ -275,6 +266,7 @@
       this.matsolid = matsolid;
 
       this.renderobject = new THREE.Mesh(geometry, matsolid);
+      this.renderobject.geometry.computeVertexNormals();
 
       this.renderobject.name = e.detail.name || this.modelname;
 
@@ -282,6 +274,10 @@
 
       this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, modelcolor);
       this.renderobjectwireframe.name = this.renderobject.name + "-wireframe";
+
+      if(this.togglewireframe) {
+        this.scene.add(this.renderobjectwireframe);
+      }
 
       var boundingbox = new THREE.Box3().setFromObject(this.renderobject);
 
@@ -321,14 +317,27 @@
     scenerendered: function(e) {
       console.log("Scene rendered!");
 
-      this.renderer.capture = this.renderer.domElement.toDataURL();
-
       this.spinner.removeAttribute('active');
       this.renderel.innerHTML = "";
       this.modelscene = e.detail;
 
       this.renderel.innerHTML = '';
       this.renderel.appendChild(e.detail.renderElement);
+
+      var toolbarbuttons = this.getElementsByClassName('viewertoolbarbuttons');
+      var toolbartoggles = this.getElementsByClassName('viewertoolbartoggles');
+
+      for(var i = 0; i < toolbarbuttons.length; i++) {
+        toolbarbuttons[i].removeAttribute('disabled');
+      }
+
+      for(var i = 0; i < toolbartoggles.length; i++) {
+        toolbartoggles[i].removeAttribute('disabled');
+      }
+
+      var collapsed = this.getElementsByClassName('toolbarcollapse');
+
+      collapsed[0].toggle();
     },
 
     viewerresized: function(e) {
@@ -356,8 +365,6 @@
     },
 
     onclickbtnsolid: function (e) {
-      this.togglesolid ^= true;
-
       if(this.togglesolid) {
         this.scene.add(this.renderobject);
       } else {
@@ -368,8 +375,6 @@
     },
 
     onclickbtnwireframe: function (e) {
-      this.togglewireframe ^= true;
-
       if(this.togglewireframe) {
         this.scene.add(this.renderobjectwireframe);
       } else {
