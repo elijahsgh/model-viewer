@@ -163,7 +163,7 @@
 
       camera.add(lights.camera);
       scene.add(camera);
-      
+
       scene.add(lights.ambient);
 
       // Z is *up* for 3D printing! :)
@@ -263,8 +263,11 @@
 
       this.matsolid = matsolid;
 
+      geometry.computeFaceNormals();
+      geometry.computeVertexNormals();
+      geometry.computeBoundingBox();
+
       this.renderobject = new THREE.Mesh(geometry, matsolid);
-      this.renderobject.geometry.computeVertexNormals();
 
       this.renderobject.name = e.detail.name || this.modelname;
 
@@ -279,9 +282,11 @@
         this.scene.add(this.renderobjectwireframe);
       }
 
-      var boundingbox = new THREE.Box3().setFromObject(this.renderobject);
+      var boundingbox = this.renderobject.geometry.boundingBox;
 
       var objectcenter = boundingbox.center();
+      console.log("Boundingbox center generated: " + boundingbox.min.z);
+      console.log("Geometry center: " + geometry.boundingBox.min.z);
 
       var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().z, boundingbox.size().x)/10)*10,
                                                  10.0);
@@ -291,23 +296,19 @@
       // Turn floor to match Z-up orientation
       objectfloorgrid.rotation.x = 90*(Math.PI/180);
 
-      objectfloorgrid.position.x = boundingbox.center().x;
-      objectfloorgrid.position.y = boundingbox.center().y;
+      objectfloorgrid.position.x = objectcenter.x;
+      objectfloorgrid.position.y = objectcenter.y;
       objectfloorgrid.position.z = boundingbox.min.z;
 
       this.scene.add(objectfloorgrid);
 
       this.camera.position.z = boundingbox.max.z;
-      this.camera.position.y = boundingbox.max.y*-4;
+      this.camera.position.y = boundingbox.max.y*-3;
       this.camera.position.x = 0;
 
       this.camera.lookAt(objectcenter);
 
       this.controls.target = objectcenter;
-
-      this.lights.camera.position.set(this.camera.position.x,
-                                      this.camera.position.y,
-                                      this.camera.position.z);
 
       this.camera.updateProjectionMatrix();
 
