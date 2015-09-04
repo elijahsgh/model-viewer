@@ -158,11 +158,12 @@
 
       this.lights = lights;
 
-      lights.camera = new THREE.DirectionalLight(0xffffff);
-      lights.camera.intensity = 0.8;
-      lights.ambient = new THREE.AmbientLight(0x505050);
+      lights.camera = new THREE.DirectionalLight(0xffffff, 0.7);
+      lights.ambient = new THREE.AmbientLight(0x555555);
 
-      scene.add(lights.camera);
+      camera.add(lights.camera);
+      scene.add(camera);
+      
       scene.add(lights.ambient);
 
       // Z is *up* for 3D printing! :)
@@ -176,10 +177,6 @@
       this.renderer = renderer;
 
       var render = function() {
-        this.lights.camera.position.set(this.camera.position.x,
-                                        this.camera.position.y,
-                                        this.camera.position.z);
-
         this.renderer.render(this.scene, this.camera);
       }
 
@@ -311,6 +308,8 @@
       this.lights.camera.position.set(this.camera.position.x,
                                       this.camera.position.y,
                                       this.camera.position.z);
+
+      this.camera.updateProjectionMatrix();
 
       this.renderer.render(this.scene, this.camera);
 
