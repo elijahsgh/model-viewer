@@ -285,8 +285,6 @@
       var boundingbox = this.renderobject.geometry.boundingBox;
 
       var objectcenter = boundingbox.center();
-      console.log("Boundingbox center generated: " + boundingbox.min.z);
-      console.log("Geometry center: " + geometry.boundingBox.min.z);
 
       var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().z, boundingbox.size().x)/10)*10,
                                                  10.0);
