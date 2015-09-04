@@ -13,6 +13,7 @@
 <script src="../three.js/examples/js/loaders/STLLoader.js"></script>
 <script src="../bytebuffer/dist/ByteBufferAB.js"></script>
 <script src="../protobuf/dist/ProtoBuf.js"></script>
+<script src="utility.js"></script>
 
 <dom-module id="model-viewer">
   <style>
@@ -273,7 +274,7 @@
       if(this.togglesolid) {
         this.scene.add(this.renderobject);
       }
-      
+
       this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, modelcolor);
       this.renderobjectwireframe.name = this.renderobject.name + "-wireframe";
 
