@@ -51,6 +51,7 @@
       position: relative;
       margin: 0 10%;
       padding: 0;
+      @apply(--layout-horizontal);
     }
 
     @media (max-width: 900px) {
@@ -66,7 +67,6 @@
     .viewertoolbarbuttons {
       background: blue;
       color: white;
-      margin-right: 1em;
     }
 
     .viewertoolbartoggles {
@@ -77,8 +77,8 @@
     }
 
     .viewertoolbarlabels {
-      color: blue;
-      margin: 0 0.5em;
+      color: black;
+      text-transform: uppercase;
       display: inline;
     }
   </style>
@@ -94,13 +94,19 @@
     </div>
     <iron-collapse class="toolbarcollapse">
       <div class="viewertoolbarcontainer">
-        <paper-button class="viewertoolbarbuttons" raised disabled>
+        <paper-item class="viewertoolbarlabels">Scene Controls</paper-item>
+        <paper-item class="viewertoolbarlabels">
+          <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
+          <span>Wireframe</span>
+        </paper-item>
+        <paper-item class="viewertoolbarlabels">
+          <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
+          <span>Solid</span>
+        </paper-item>
+        <span class="flex self-stretch"></span>
+        <paper-button class="viewertoolbarbuttons flex self-end" raised disabled>
           <iron-icon icon="icons:camera-enhance" on-click="onclickbtncapture"></iron-icon>
         </paper-button>
-        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
-        <span class="viewertoolbarlabels">Wireframe</span>
-        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
-        <span class="viewertoolbarlabels">Solid</span>
       </div>
     </iron-collapse>
   </template>
