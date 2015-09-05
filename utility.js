@@ -1,4 +1,4 @@
-function getsubobjectcount() {
+function getsubobject() {
   var scenes = document.getElementsByTagName('model-viewer');
 
   var viewer = scenes[0];
@@ -23,7 +23,7 @@ function getsubobjectcount() {
 
   var vertset = {}
   var vertsetlength = 3;
-
+  var lastvertsetlength = 0;
   var newfaces = [];
 
   vertset[rfaces[0].a] = 1;
@@ -46,6 +46,7 @@ function getsubobjectcount() {
 
           if(newfaces.indexOf(rfaces[i]) < 0)  {
               newfaces.push(rfaces[i]);
+              rfaces[i].color.set(0xffffff);
             }
 
           vertset[rfaces[i].a] = vertset[rfaces[i].a] != null ? vertset[rfaces[i].a] + 1 : 1;
@@ -54,7 +55,8 @@ function getsubobjectcount() {
         }
     }
 
-    if(nonbufferobj.vertices.length == vertsetlength) {
+    if(nonbufferobj.vertices.length == vertsetlength
+      || lastvertsetlength == vertsetlength) {
       console.log("Break in pass " + passes);
       break;
     }
@@ -70,6 +72,75 @@ function getsubobjectcount() {
 
 }
 
-function splitobjects(faces) {
+function testexport() {
+  var scenes = document.getElementsByTagName('model-viewer');
 
+  var viewer = scenes[0];
+  var meshes = [];
+
+  console.log("Meshes: ");
+
+  for(var i = 0; i < viewer.scene.children.length; i++) {
+    if(viewer.scene.children[i] instanceof THREE.Mesh) {
+      console.log("    " + viewer.scene.children[i].name);
+      meshes.push(viewer.scene.children[i]);
+    }
+  }
+
+  var faces = null, vertices = null;
+
+  var nbogeometry = null;
+  var mesh = meshes[0];
+
+  if(mesh.geometry instanceof THREE.BufferGeometry) {
+    nbogeometry = new THREE.Geometry();
+    nbogeometry.fromBufferGeometry(mesh.geometry);
+  } else if(mesh.geometry instanceof THREE.Geometry) {
+    nbogeometry = mesh.geometry.clone();
+  }
+
+  var sizeofstl = 80+4+nbogeometry.faces.length*50;
+
+  console.log("Size of style: " + sizeofstl);
+
+  var stlbuffer = new dcodeIO.ByteBuffer(capacity=sizeofstl, littleEndian=true);
+  var headerstring = "TamarinTech Model-Viewer STL Exporter: " + mesh.name;
+
+  stlbuffer.writeUTF8String(headerstring);
+  stlbuffer.skip(80 - headerstring.length);
+
+  stlbuffer.writeUint32(nbogeometry.faces.length);
+
+  for(var facei = 0; facei < nbogeometry.faces.length; facei++) {
+    face = nbogeometry.faces[facei];
+    stlbuffer.writeFloat32(0); // Normal a
+    stlbuffer.writeFloat32(0); // Normal b
+    stlbuffer.writeFloat32(0); // Normal c
+
+    nbogeometry.vertices[face.a].applyMatrix4(mesh.matrix);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.a].x);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.a].y);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.a].z);
+
+    nbogeometry.vertices[face.b].applyMatrix4(mesh.matrix);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.b].x);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.b].y);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.b].z);
+
+    nbogeometry.vertices[face.c].applyMatrix4(mesh.matrix);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.c].x);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.c].y);
+    stlbuffer.writeFloat32(nbogeometry.vertices[face.c].z);
+    stlbuffer.writeUint16(0); // Attribute
+  }
+
+  nbogeometry.dispose();
+
+  stlbuffer.flip();
+
+  var a = document.createElement('a');
+  var stlblob = new Blob([stlbuffer.toArrayBuffer()], {type: "octet/stream"});
+  a.href = window.URL.createObjectURL(stlblob);
+  a.download = mesh.name + ".stl";
+  a.click();
 }

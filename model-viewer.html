@@ -168,8 +168,10 @@
       lights.ambient = new THREE.AmbientLight(this.lightambientcolor);
 
       camera.add(lights.camera);
+      camera.name = "Camera";
       scene.add(camera);
 
+      lights.ambient.name = "Ambient Light";
       scene.add(lights.ambient);
 
       // Z is *up* for 3D printing! :)
@@ -294,6 +296,8 @@
 
       var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().z, boundingbox.size().x)/10)*10,
                                                  10.0);
+
+      objectfloorgrid.name = "GridHelper";
 
       objectfloorgrid.setColors(gridcolor, gridcolor);
 
