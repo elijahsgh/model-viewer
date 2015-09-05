@@ -164,8 +164,8 @@
 
       this.lights = lights;
 
-      lights.camera = new THREE.DirectionalLight(0xffffff, 0.7);
-      lights.ambient = new THREE.AmbientLight(0x555555);
+      lights.camera = new THREE.DirectionalLight(this.lightcolor, this.lightintensity);
+      lights.ambient = new THREE.AmbientLight(this.lightambientcolor);
 
       camera.add(lights.camera);
       scene.add(camera);
@@ -259,9 +259,9 @@
       var materials = e.detail.materials;
       var geometry = e.detail.geometry;
 
-      var modelcolor = this.modelcolor === undefined ? 0xaaaaff : this.modelcolor;
-      var gridcolor = this.gridcolor === undefined ? 0xffffff : this.gridcolor;
-      var backgroundcolor = this.backgroundcolor === undefined ? 0x000000 : this.backgroundcolor;
+      var modelcolor = this.modelcolor;
+      var gridcolor = this.gridcolor;
+      var backgroundcolor = this.backgroundcolor;
 
       this.renderer.setClearColor(backgroundcolor);
 
@@ -408,13 +408,28 @@
         type: String
       },
       backgroundcolor: {
-        type: Number
+        type: Number,
+        value: 0x0
       },
       gridcolor: {
-        type: Number
+        type: Number,
+        value: 0xffffff
       },
       modelcolor: {
-        type: Number
+        type: Number,
+        value: 0xaaaaff
+      },
+      lightambientcolor: {
+        type: Number,
+        value: 0x777777
+      },
+      lightcolor: {
+        type: Number,
+        value: 0xffffff
+      },
+      lightintensity: {
+        type: Number,
+        value: 0.6
       },
       togglesolid: {
         type: Boolean,

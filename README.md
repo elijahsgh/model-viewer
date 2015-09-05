@@ -176,6 +176,20 @@ Note that this is only available after the scene has been rendered (immediately 
 
 0.0.1: Initial release!
 
-0.0.2: Documentation, project packaging.
+0.0.2: Documentation, project packaging
 
-0.0.3: User-configurable colors.
+0.0.3: User-configurable colors
+
+0.0.4: More user configurable options - light color, intensity, ambient color.  New layout for viewer controls.  Various code fixes.  Utility.js added for early testing of new features.
+
+## Road Map
+
+### Version 1.0
+* Must support loading common STL, JSON and ProtoBuf models
+* Must include export functionality for the scene as a binary STL
+* Should support exporting to multimaterial AMF
+* Should support loading OBJ and PLY
+* Should include an export button to allow the user to export geometry.
+* May include importing objects via URL
+* May include importing materials via URL/JSON
+* May include optional textures
