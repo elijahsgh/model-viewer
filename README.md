@@ -25,13 +25,31 @@ To use protocol buffers you will need to compile your model appropriately and pr
 
 ## Starting the included demo
 
-This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.  You will need to serve the demo from a web server.
+This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.  You will need to serve the demo from a web server.  This is common for Polymer elements and demos.
 
 If you have access to Python the simplest way to view the demo is to use something like the following from within the model-viewer directory:
 
 `python -m SimpleHTTPServer`
 
 You should then be able to browse to localhost:8000 (or similar) to view the included demo.
+
+Step-by-step:
+
+1. Navigate to your project's directory that holds static files or create a new empty directory to view the demo.
+
+  `mkdir ~/model-viewer-demo`
+
+  `cd ~/model-viewer/demo`
+
+2. Install the model-viewer component.
+
+  `bower install model-viewer`
+
+3. Serve the directory.
+
+  `python -m SimpleHTTPServer`
+
+4. Navigate to the demo [http://localhost:8000/bower_components/model-viewer/demo/](http://localhost:8000/bower_components/model-viewer/demo/)
 
 ## Live Demo
 
