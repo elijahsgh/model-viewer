@@ -25,13 +25,31 @@ To use protocol buffers you will need to compile your model appropriately and pr
 
 ## Starting the included demo
 
-This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.  You will need to serve the demo from a web server.
+This is a Polymer based project and uses web components.  You will probably not be able to simply load index.html in your favorite browser - the components won't load.  You will need to serve the demo from a web server.  This is common for Polymer elements and demos.
 
 If you have access to Python the simplest way to view the demo is to use something like the following from within the model-viewer directory:
 
 `python -m SimpleHTTPServer`
 
 You should then be able to browse to localhost:8000 (or similar) to view the included demo.
+
+Step-by-step:
+
+1. Navigate to your project's directory that holds static files or create a new empty directory to view the demo.
+
+  `mkdir ~/model-viewer-demo`
+
+  `cd ~/model-viewer/demo`
+
+2. Install the model-viewer component.
+
+  `bower install model-viewer`
+
+3. Serve the directory.
+
+  `python -m SimpleHTTPServer`
+
+4. Navigate to the demo [http://localhost:8000/bower_components/model-viewer/demo/](http://localhost:8000/bower_components/model-viewer/demo/)
 
 ## Live Demo
 
@@ -176,6 +194,20 @@ Note that this is only available after the scene has been rendered (immediately 
 
 0.0.1: Initial release!
 
-0.0.2: Documentation, project packaging.
+0.0.2: Documentation, project packaging
 
-0.0.3: User-configurable colors.
+0.0.3: User-configurable colors
+
+0.0.4: More user configurable options - light color, intensity, ambient color.  New layout for viewer controls.  Various code fixes.  Utility.js added for early testing of new features.
+
+## Road Map
+
+### Version 1.0
+* Must support loading common STL, JSON and ProtoBuf models
+* Must include export functionality for the scene as a binary STL
+* Should support exporting to multimaterial AMF
+* Should support loading OBJ and PLY
+* Should include an export button to allow the user to export geometry.
+* May include importing objects via URL
+* May include importing materials via URL/JSON
+* May include optional textures

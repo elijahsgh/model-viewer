@@ -13,6 +13,7 @@
 <script src="../three.js/examples/js/loaders/STLLoader.js"></script>
 <script src="../bytebuffer/dist/ByteBufferAB.js"></script>
 <script src="../protobuf/dist/ProtoBuf.js"></script>
+<script src="utility.js"></script>
 
 <dom-module id="model-viewer">
   <style>
@@ -50,6 +51,7 @@
       position: relative;
       margin: 0 10%;
       padding: 0;
+      @apply(--layout-horizontal);
     }
 
     @media (max-width: 900px) {
@@ -65,7 +67,6 @@
     .viewertoolbarbuttons {
       background: blue;
       color: white;
-      margin-right: 1em;
     }
 
     .viewertoolbartoggles {
@@ -76,8 +77,8 @@
     }
 
     .viewertoolbarlabels {
-      color: blue;
-      margin: 0 0.5em;
+      color: black;
+      text-transform: uppercase;
       display: inline;
     }
   </style>
@@ -93,13 +94,19 @@
     </div>
     <iron-collapse class="toolbarcollapse">
       <div class="viewertoolbarcontainer">
-        <paper-button class="viewertoolbarbuttons" raised disabled>
+        <paper-item class="viewertoolbarlabels">Scene Controls</paper-item>
+        <paper-item class="viewertoolbarlabels">
+          <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
+          <span>Wireframe</span>
+        </paper-item>
+        <paper-item class="viewertoolbarlabels">
+          <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
+          <span>Solid</span>
+        </paper-item>
+        <span class="flex self-stretch"></span>
+        <paper-button class="viewertoolbarbuttons flex self-end" raised disabled>
           <iron-icon icon="icons:camera-enhance" on-click="onclickbtncapture"></iron-icon>
         </paper-button>
-        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
-        <span class="viewertoolbarlabels">Wireframe</span>
-        <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
-        <span class="viewertoolbarlabels">Solid</span>
       </div>
     </iron-collapse>
   </template>
@@ -157,11 +164,12 @@
 
       this.lights = lights;
 
-      lights.camera = new THREE.DirectionalLight(0x606060);
-      lights.camera.intensity = 1.0;
-      lights.ambient = new THREE.AmbientLight(0x505050);
+      lights.camera = new THREE.DirectionalLight(this.lightcolor, this.lightintensity);
+      lights.ambient = new THREE.AmbientLight(this.lightambientcolor);
 
-      scene.add(lights.camera);
+      camera.add(lights.camera);
+      scene.add(camera);
+
       scene.add(lights.ambient);
 
       // Z is *up* for 3D printing! :)
@@ -175,10 +183,6 @@
       this.renderer = renderer;
 
       var render = function() {
-        this.lights.camera.position.set(this.camera.position.x,
-                                        this.camera.position.y,
-                                        this.camera.position.z);
-
         this.renderer.render(this.scene, this.camera);
       }
 
@@ -255,9 +259,9 @@
       var materials = e.detail.materials;
       var geometry = e.detail.geometry;
 
-      var modelcolor = this.modelcolor === undefined ? 0xaaaaff : this.modelcolor;
-      var gridcolor = this.gridcolor === undefined ? 0xffffff : this.gridcolor;
-      var backgroundcolor = this.backgroundcolor === undefined ? 0x000000 : this.backgroundcolor;
+      var modelcolor = this.modelcolor;
+      var gridcolor = this.gridcolor;
+      var backgroundcolor = this.backgroundcolor;
 
       this.renderer.setClearColor(backgroundcolor);
 
@@ -265,15 +269,18 @@
 
       this.matsolid = matsolid;
 
+      geometry.computeFaceNormals();
+      geometry.computeVertexNormals();
+      geometry.computeBoundingBox();
+
       this.renderobject = new THREE.Mesh(geometry, matsolid);
-      this.renderobject.geometry.computeVertexNormals();
 
       this.renderobject.name = e.detail.name || this.modelname;
 
       if(this.togglesolid) {
         this.scene.add(this.renderobject);
       }
-      
+
       this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, modelcolor);
       this.renderobjectwireframe.name = this.renderobject.name + "-wireframe";
 
@@ -281,7 +288,7 @@
         this.scene.add(this.renderobjectwireframe);
       }
 
-      var boundingbox = new THREE.Box3().setFromObject(this.renderobject);
+      var boundingbox = this.renderobject.geometry.boundingBox;
 
       var objectcenter = boundingbox.center();
 
@@ -293,23 +300,21 @@
       // Turn floor to match Z-up orientation
       objectfloorgrid.rotation.x = 90*(Math.PI/180);
 
-      objectfloorgrid.position.x = boundingbox.center().x;
-      objectfloorgrid.position.y = boundingbox.center().y;
+      objectfloorgrid.position.x = objectcenter.x;
+      objectfloorgrid.position.y = objectcenter.y;
       objectfloorgrid.position.z = boundingbox.min.z;
 
       this.scene.add(objectfloorgrid);
 
       this.camera.position.z = boundingbox.max.z;
-      this.camera.position.y = boundingbox.max.y*-4;
+      this.camera.position.y = boundingbox.max.y*-3;
       this.camera.position.x = 0;
 
       this.camera.lookAt(objectcenter);
 
       this.controls.target = objectcenter;
 
-      this.lights.camera.position.set(this.camera.position.x,
-                                      this.camera.position.y,
-                                      this.camera.position.z);
+      this.camera.updateProjectionMatrix();
 
       this.renderer.render(this.scene, this.camera);
 
@@ -403,13 +408,28 @@
         type: String
       },
       backgroundcolor: {
-        type: Number
+        type: Number,
+        value: 0x0
       },
       gridcolor: {
-        type: Number
+        type: Number,
+        value: 0xffffff
       },
       modelcolor: {
-        type: Number
+        type: Number,
+        value: 0xaaaaff
+      },
+      lightambientcolor: {
+        type: Number,
+        value: 0x777777
+      },
+      lightcolor: {
+        type: Number,
+        value: 0xffffff
+      },
+      lightintensity: {
+        type: Number,
+        value: 0.6
       },
       togglesolid: {
         type: Boolean,
