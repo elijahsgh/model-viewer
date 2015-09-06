@@ -2,6 +2,8 @@
 
 This is a Polymer based project to provide a basic model viewer for websites that want to display models intended for 3D printing.  The model is displayed using three.js and the loader currently supports STL, three.js JSON and Protocol Buffer encoded models.
 
+In addition to basic viewer functionality you can scale, rotate and export an object directly from the viewer into an STL file.
+
 Polymer https://github.com/polymer/polymer
 
 three.js https://github.com/mrdoob/three.js/
@@ -192,13 +194,15 @@ Note that this is only available after the scene has been rendered (immediately 
 
 ## Release notes
 
-0.0.1: Initial release!
+0.0.5: You can now rotate, scale and export an STL directly from the viewer.
 
-0.0.2: Documentation, project packaging
+0.0.4: More user configurable options - light color, intensity, ambient color.  New layout for viewer controls.  Various code fixes.  Utility.js added for early testing of new features.
 
 0.0.3: User-configurable colors
 
-0.0.4: More user configurable options - light color, intensity, ambient color.  New layout for viewer controls.  Various code fixes.  Utility.js added for early testing of new features.
+0.0.2: Documentation, project packaging
+
+0.0.1: Initial release!
 
 ## Road Map
 

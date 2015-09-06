@@ -4,8 +4,8 @@
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../paper-spinner/paper-spinner.html">
-<link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../paper-input/paper-input.html">
 
 <script src="../three.js/build/three.min.js"></script>
 <script src="../three.js/examples/js/controls/OrbitControls.js"></script>
@@ -49,19 +49,20 @@
 
     .viewertoolbarcontainer {
       position: relative;
-      margin: 0 10%;
-      padding: 0;
-      @apply(--layout-horizontal);
+      margin-left: 2em;
     }
 
     @media (max-width: 900px) {
-      .viewertoolbarcontainer {
-        display: none;
-      }
     }
 
     .viewertoolbar {
       --paper-toolbar-background: white;
+    }
+
+    .viewertoolscontainer {
+      position: relative;
+      margin: 0 10%;
+      padding: 0;
     }
 
     .viewertoolbarbuttons {
@@ -80,7 +81,24 @@
       color: black;
       text-transform: uppercase;
       display: inline;
+      margin: 0.5em;
     }
+
+    .btnexportlabel {
+      color: white;
+      text-transform: uppercase;
+      font-weight: bold;
+      display: inline;
+    }
+
+    .numfloat {
+      width: 4em;
+    }
+
+    .scaleinputs {
+      margin: 0 1em;
+    }
+
   </style>
 
   <template>
@@ -91,24 +109,48 @@
         </paper-button class="viewertoolbar">
         <paper-spinner class="loadingspinner" inactive></paper-spinner>
       </div>
-    </div>
-    <iron-collapse class="toolbarcollapse">
-      <div class="viewertoolbarcontainer">
-        <paper-item class="viewertoolbarlabels">Scene Controls</paper-item>
-        <paper-item class="viewertoolbarlabels">
-          <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
-          <span>Wireframe</span>
-        </paper-item>
-        <paper-item class="viewertoolbarlabels">
-          <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
-          <span>Solid</span>
-        </paper-item>
-        <span class="flex self-stretch"></span>
-        <paper-button class="viewertoolbarbuttons flex self-end" raised disabled>
-          <iron-icon icon="icons:camera-enhance" on-click="onclickbtncapture"></iron-icon>
-        </paper-button>
-      </div>
-    </iron-collapse>
+
+      <iron-collapse class="toolbarcollapse">
+        <div class="viewertoolscontainer">
+          <paper-item class="viewertoolbarlabels">Scene Controls</paper-item>
+          <div class="viewertoolbarcontainer horizontal layout wrap flex">
+            <paper-item>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
+              <span class="viewertoolbarlabels">Wireframe</span>
+            </paper-item>
+            <paper-item>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
+              <span class="viewertoolbarlabels">Solid</span>
+            </paper-item>
+            <paper-button id="button-scene-snapshot" class="viewertoolbarbuttons" on-click="onclickbtncapture" raised disabled>
+              <iron-icon icon="icons:camera-enhance"></iron-icon>
+            </paper-button>
+          </div>
+
+          <paper-item class="viewertoolbarlabels">Model Scale</paper-item>
+          <div class="viewertoolbarcontainer horizontal layout wrap flex">
+            <paper-input label="Scale X" class="scaleinputs numfloat" type="number" value="{{scalex}}" on-change="onscalechange"></paper-input>
+            <paper-input label="Scale Y" class="scaleinputs numfloat" type="number" value="{{scaley}}" on-change="onscalechange"></paper-input>
+            <paper-input label="Scale Z" class="scaleinputs numfloat" type="number" value="{{scalez}}" on-change="onscalechange"></paper-input>
+          </div>
+
+          <paper-item class="viewertoolbarlabels">Model Rotation</paper-item>
+          <div class="viewertoolbarcontainer horizontal layout wrap flex">
+            <paper-input label="Rotate X" class="scaleinputs numfloat" type="number" value="{{rotatex}}" on-change="onrotatechange"></paper-input>
+            <paper-input label="Rotate Y" class="scaleinputs numfloat" type="number" value="{{rotatey}}" on-change="onrotatechange"></paper-input>
+            <paper-input label="Rotate Z" class="scaleinputs numfloat" type="number" value="{{rotatez}}" on-change="onrotatechange"></paper-input>
+          </div>
+
+          <paper-item class="viewertoolbarlabels">Export</paper-item>
+          <div class="viewertoolbarcontainer horizontal layout wrap flex">
+            <paper-button id="button-scene-snapshot" class="viewertoolbarbuttons" on-click="onclickbtnexportstl" raised disabled>
+              <iron-icon icon="icons:launch"></iron-icon>
+              <paper-item class="btnexportlabel">STL</paper-item>
+            </paper-button>
+          </div>
+
+        </div>
+      </iron-collapse>
   </template>
 </dom-module>
 
@@ -168,8 +210,10 @@
       lights.ambient = new THREE.AmbientLight(this.lightambientcolor);
 
       camera.add(lights.camera);
+      camera.name = "Camera";
       scene.add(camera);
 
+      lights.ambient.name = "Ambient Light";
       scene.add(lights.ambient);
 
       // Z is *up* for 3D printing! :)
@@ -295,6 +339,8 @@
       var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().z, boundingbox.size().x)/10)*10,
                                                  10.0);
 
+      objectfloorgrid.name = "GridHelper";
+
       objectfloorgrid.setColors(gridcolor, gridcolor);
 
       // Turn floor to match Z-up orientation
@@ -391,6 +437,86 @@
       this.renderer.render(this.scene, this.camera);
     },
 
+    onclickbtnexportstl: function (e) {
+      var mesh = this.scene.getObjectByName(this.modelname);
+
+      var faces = null, vertices = null;
+
+      var nbogeometry = null;
+
+      if(mesh.geometry instanceof THREE.BufferGeometry) {
+        nbogeometry = new THREE.Geometry();
+        nbogeometry.fromBufferGeometry(mesh.geometry);
+      } else if(mesh.geometry instanceof THREE.Geometry) {
+        nbogeometry = mesh.geometry.clone();
+      }
+
+      var sizeofstl = 80+4+nbogeometry.faces.length*50;
+
+      console.log("Size of style: " + sizeofstl);
+
+      var stlbuffer = new dcodeIO.ByteBuffer(capacity=sizeofstl, littleEndian=true);
+      var headerstring = "TamarinTech Model-Viewer STL Exporter: " + mesh.name;
+
+      stlbuffer.writeUTF8String(headerstring);
+      stlbuffer.skip(80 - headerstring.length);
+
+      stlbuffer.writeUint32(nbogeometry.faces.length);
+
+      for(var facei = 0; facei < nbogeometry.faces.length; facei++) {
+        face = nbogeometry.faces[facei];
+        stlbuffer.writeFloat32(0); // Normal a
+        stlbuffer.writeFloat32(0); // Normal b
+        stlbuffer.writeFloat32(0); // Normal c
+
+        nbogeometry.vertices[face.a].applyMatrix4(mesh.matrix);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.a].x);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.a].y);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.a].z);
+
+        nbogeometry.vertices[face.b].applyMatrix4(mesh.matrix);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.b].x);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.b].y);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.b].z);
+
+        nbogeometry.vertices[face.c].applyMatrix4(mesh.matrix);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.c].x);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.c].y);
+        stlbuffer.writeFloat32(nbogeometry.vertices[face.c].z);
+        stlbuffer.writeUint16(0); // Attribute
+      }
+
+      nbogeometry.dispose();
+
+      stlbuffer.flip();
+
+      var a = document.createElement('a');
+      var stlblob = new Blob([stlbuffer.toArrayBuffer()], {type: "octet/stream"});
+      a.href = window.URL.createObjectURL(stlblob);
+      a.download = mesh.name + ".stl";
+      a.click();
+    },
+
+    onscalechange: function (e) {
+      var obj = this.scene.getObjectByName(this.modelname);
+
+      obj.scale.set(this.scalex, this.scaley, this.scalez);
+
+      this.renderer.render(this.scene, this.camera);
+    },
+
+    onrotatechange: function (e) {
+      var obj = this.scene.getObjectByName(this.modelname);
+
+      obj.rotation.set(0, 0, 0, 0);
+
+      obj.rotateOnAxis(new THREE.Vector3(1, 0, 0), this.rotatex*(Math.PI/180));
+      obj.rotateOnAxis(new THREE.Vector3(0, 1, 0), this.rotatey*(Math.PI/180));
+      obj.rotateOnAxis(new THREE.Vector3(0, 0, 1), this.rotatez*(Math.PI/180));
+
+      this.renderer.render(this.scene, this.camera);
+    },
+
     properties: {
       model: {
         type: String
@@ -438,6 +564,32 @@
       togglewireframe: {
         type: Boolean,
         value: false
+      },
+
+      rotatex: {
+        type: Number,
+        value: 0
+      },
+      rotatey: {
+        type: Number,
+        value: 0
+      },
+      rotatez: {
+        type: Number,
+        value: 0
+      },
+
+      scalex: {
+        type: Number,
+        value: 1.0
+      },
+      scaley: {
+        type: Number,
+        value: 1.0
+      },
+      scalez: {
+        type: Number,
+        value: 1.0
       }
     }
   });
