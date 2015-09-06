@@ -41,7 +41,7 @@ Step-by-step:
 
   `mkdir ~/model-viewer-demo`
 
-  `cd ~/model-viewer/demo`
+  `cd ~/model-viewer-demo`
 
 2. Install the model-viewer component.
 
@@ -75,35 +75,40 @@ The view is flipped as Z is up in the viewport to match the orientation of print
 
 Core component for displaying and interacting with the view of the model.
 
-* `previewimg` String
+* `previewimg` String (required)
 
    Place holder used before the model is loaded.
 
-* `model` String
+* `model` String (required)
 
    The actual model.  This should be the json, STL or pb file.
 
-* `modelname` String
+* `modelname` String (required)
 
   The name of the model for displaying to the user.
 
-* `loadmethod` String
+* `loadmethod` String (not required, but should be explicit)
 
    How the model should be loaded.  Currently `stl` or `json` or `protobuf`.
 
-* `proto` String
+* `proto` String (required for loadmethod=protobuf)
 
    Location of the proto file used to generate the protobuf version of the model if using protocol buffers.
 
-* `backgroundcolor`, `gridcolor`, `modelcolor`:
+* `backgroundcolor`, `gridcolor`, `modelcolor` Number (optional)
 
    The colors you want for the respective render.  Currently, these should be in hex that three.js understands - ex: `0xffffff` is white. :)
 
-* `togglesolid` Boolean
+* `lightambientcolor`, `lightcolor`, `lightintensity` Number (optional)
+
+   Light settings.  `lightintensity` should be a float from 0 to 1.0.
+   All other settings should be hexidecimal.
+
+* `togglesolid` Boolean (optional)
 
   Render the solid geometry of the object.
 
-* `togglewireframe` Boolean
+* `togglewireframe` Boolean (optional)
 
   Render the wireframe for the object.
 
@@ -207,11 +212,11 @@ Note that this is only available after the scene has been rendered (immediately 
 ## Road Map
 
 ### Version 1.0
-* Must support loading common STL, JSON and ProtoBuf models
-* Must include export functionality for the scene as a binary STL
+* **[Complete]** Must support loading common STL, JSON and ProtoBuf models
+* **[Complete]** Must include export functionality for the scene as a binary STL
+* **[Complete]** Should include an export button to allow the user to export geometry.
 * Should support exporting to multimaterial AMF
 * Should support loading OBJ and PLY
-* Should include an export button to allow the user to export geometry.
 * May include importing objects via URL
 * May include importing materials via URL/JSON
 * May include optional textures

@@ -304,15 +304,20 @@
       console.log("Loaded model event");
 
       var materials = e.detail.materials;
-      var geometry = e.detail.geometry;
+      var geometry = null;
 
-      var modelcolor = this.modelcolor;
-      var gridcolor = this.gridcolor;
-      var backgroundcolor = this.backgroundcolor;
+      if(e.detail.geometry instanceof THREE.Geometry) {
+        geometry = new THREE.BufferGeometry();
+        geometry.fromGeometry(e.detail.geometry);
+      } else if(e.detail.geometry instanceof THREE.BufferGeometry) {
+        geometry = e.detail.geometry;
+      }
 
-      this.renderer.setClearColor(backgroundcolor);
+      e.detail.geometry.dispose();
 
-      var matsolid = new THREE.MeshPhongMaterial({ color: modelcolor, shading: THREE.FlatShading });
+      this.renderer.setClearColor(this.backgroundcolor);
+
+      var matsolid = new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading });
 
       this.matsolid = matsolid;
 
@@ -328,7 +333,7 @@
         this.scene.add(this.renderobject);
       }
 
-      this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, modelcolor);
+      this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, this.wireframecolor);
       this.renderobjectwireframe.name = this.renderobject.name + "-wireframe";
 
       if(this.togglewireframe) {
@@ -344,7 +349,7 @@
 
       objectfloorgrid.name = "GridHelper";
 
-      objectfloorgrid.setColors(gridcolor, gridcolor);
+      objectfloorgrid.setColors(this.gridcolor, this.gridcolor);
 
       // Turn floor to match Z-up orientation
       objectfloorgrid.rotation.x = 90*(Math.PI/180);
@@ -443,53 +448,36 @@
     onclickbtnexportstl: function (e) {
       var mesh = this.scene.getObjectByName(this.modelname);
 
-      var faces = null, vertices = null;
+      var vertices = mesh.geometry.getAttribute('position').array.slice();
 
-      var nbogeometry = null;
+      var sizeofstl = 80+4+((vertices.length/9)*50);
+      var faces = vertices.length/9;
 
-      if(mesh.geometry instanceof THREE.BufferGeometry) {
-        nbogeometry = new THREE.Geometry();
-        nbogeometry.fromBufferGeometry(mesh.geometry);
-      } else if(mesh.geometry instanceof THREE.Geometry) {
-        nbogeometry = mesh.geometry.clone();
-      }
-
-      var sizeofstl = 80+4+nbogeometry.faces.length*50;
-
-      console.log("Size of style: " + sizeofstl);
+      console.log("Faces: " + faces + ", Vertices: " + vertices.length);
+      console.log("Size of STL: " + sizeofstl);
 
       var stlbuffer = new dcodeIO.ByteBuffer(capacity=sizeofstl, littleEndian=true);
       var headerstring = "TamarinTech Model-Viewer STL Exporter: " + mesh.name;
 
-      stlbuffer.writeUTF8String(headerstring);
+      stlbuffer.writeUTF8String(headerstring.substring(0, 80));
       stlbuffer.skip(80 - headerstring.length);
 
-      stlbuffer.writeUint32(nbogeometry.faces.length);
+      stlbuffer.writeUint32(vertices.length/9);
 
-      for(var facei = 0; facei < nbogeometry.faces.length; facei++) {
-        face = nbogeometry.faces[facei];
+      mesh.matrix.applyToVector3Array(vertices);
+
+      //4+4+4 9*4 + 2
+      for(var vi = 0; vi < vertices.length; ) {
         stlbuffer.writeFloat32(0); // Normal a
         stlbuffer.writeFloat32(0); // Normal b
         stlbuffer.writeFloat32(0); // Normal c
 
-        nbogeometry.vertices[face.a].applyMatrix4(mesh.matrix);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.a].x);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.a].y);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.a].z);
+        for(var facei = 0; facei < 9; facei++) {
+          stlbuffer.writeFloat32(vertices[vi++]);
+        }
 
-        nbogeometry.vertices[face.b].applyMatrix4(mesh.matrix);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.b].x);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.b].y);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.b].z);
-
-        nbogeometry.vertices[face.c].applyMatrix4(mesh.matrix);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.c].x);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.c].y);
-        stlbuffer.writeFloat32(nbogeometry.vertices[face.c].z);
         stlbuffer.writeUint16(0); // Attribute
       }
-
-      nbogeometry.dispose();
 
       stlbuffer.flip();
 
@@ -545,6 +533,10 @@
         value: 0xffffff
       },
       modelcolor: {
+        type: Number,
+        value: 0xaaaaff
+      },
+      wireframecolor: {
         type: Number,
         value: 0xaaaaff
       },
