@@ -41,7 +41,7 @@ Step-by-step:
 
   `mkdir ~/model-viewer-demo`
 
-  `cd ~/model-viewer/demo`
+  `cd ~/model-viewer-demo`
 
 2. Install the model-viewer component.
 
