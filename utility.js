@@ -1,3 +1,9 @@
+function listsceneobjects() {
+  var viewer = document.getElementsByTagName('model-viewer')[0];
+
+  console.log(viewer.scene.children);
+}
+
 function getsubobject() {
   var scenes = document.getElementsByTagName('model-viewer');
 
@@ -73,6 +79,7 @@ function getsubobject() {
 }
 
 function testexport() {
+  // Unused, old code to be removed.
   var scenes = document.getElementsByTagName('model-viewer');
 
   var viewer = scenes[0];
