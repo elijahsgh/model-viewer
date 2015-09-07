@@ -388,6 +388,7 @@
       this.renderobject = renderobject;
       this.renderobjectwireframe = renderobjectwireframe;
       this.renderobjectboxhelper = renderobjectboxhelper;
+      this.renderobjectboundingbox = boundingbox;
 
       this.renderel.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
     },
@@ -548,6 +549,16 @@
       }
 
       obj.scale.set(this.scalex, this.scaley, this.scalez);
+
+      this.renderobjectboundingbox.setFromObject(this.renderobject);
+
+      // Keep object above floor
+      if(this.renderobjectboundingbox.min.z < 0) {
+        obj.translateZ(-this.renderobjectboundingbox.min.z);
+      }
+
+      this.renderobjectboundingbox.setFromObject(this.renderobject);
+      this.renderobjectboxhelper.update(this.renderobject);
 
       this.renderer.render(this.scene, this.camera);
     },
