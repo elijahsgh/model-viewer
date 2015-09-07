@@ -125,6 +125,10 @@
               <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
               <span class="viewertoolbarlabels">Solid</span>
             </paper-item>
+            <paper-item>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnboundingbox" checked={{toggleboundingbox}} disabled></paper-toggle-button>
+              <span class="viewertoolbarlabels">Bounding Box</span>
+            </paper-item>
             <paper-button id="button-scene-snapshot" class="viewertoolbarbuttons" on-click="onclickbtncapture" raised disabled>
               <iron-icon icon="icons:camera-enhance"></iron-icon>
             </paper-button>
@@ -132,9 +136,13 @@
 
           <paper-item class="viewertoolbarlabels">Model Scale</paper-item>
           <div class="viewertoolbarcontainer horizontal layout wrap flex">
-            <paper-input label="Scale X" class="scaleinputs numfloat" type="number" value="{{scalex}}" on-change="onscalechange"></paper-input>
-            <paper-input label="Scale Y" class="scaleinputs numfloat" type="number" value="{{scaley}}" on-change="onscalechange"></paper-input>
-            <paper-input label="Scale Z" class="scaleinputs numfloat" type="number" value="{{scalez}}" on-change="onscalechange"></paper-input>
+            <paper-input name="Scale X" label="Scale X" class="scaleinputs numfloat" type="number" value="{{scalex}}" on-change="onscalechange"></paper-input>
+            <paper-input name="Scale Y" label="Scale Y" class="scaleinputs numfloat" type="number" value="{{scaley}}" on-change="onscalechange"></paper-input>
+            <paper-input name="Scale Z" label="Scale Z" class="scaleinputs numfloat" type="number" value="{{scalez}}" on-change="onscalechange"></paper-input>
+            <paper-item>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="onscalechange" checked={{scaleconstrain}} on-change="onscalechange" disabled></paper-toggle-button>
+              <span class="viewertoolbarlabels">Constrain Scale</span>
+            </paper-item>
           </div>
 
           <paper-item class="viewertoolbarlabels">Model Rotation</paper-item>
@@ -304,47 +312,48 @@
       console.log("Loaded model event");
 
       var materials = e.detail.materials;
-      var geometry = null;
+      var renderer = this.renderer;
+      var scene = this.scene;
+      var camera = this.camera;
+
+      var geometry = e.detail.geometry;
 
       if(e.detail.geometry instanceof THREE.Geometry) {
         geometry = new THREE.BufferGeometry();
         geometry.fromGeometry(e.detail.geometry);
-      } else if(e.detail.geometry instanceof THREE.BufferGeometry) {
-        geometry = e.detail.geometry;
       }
 
       e.detail.geometry.dispose();
 
-      this.renderer.setClearColor(this.backgroundcolor);
+      renderer.setClearColor(this.backgroundcolor);
 
       var matsolid = new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading });
 
-      this.matsolid = matsolid;
-
-      geometry.computeFaceNormals();
-      geometry.computeVertexNormals();
-      geometry.computeBoundingBox();
-
-      this.renderobject = new THREE.Mesh(geometry, matsolid);
-
-      this.renderobject.name = e.detail.name || this.modelname;
+      renderobject = new THREE.Mesh(geometry, matsolid);
+      renderobject.name = e.detail.name || this.modelname;
 
       if(this.togglesolid) {
-        this.scene.add(this.renderobject);
+        scene.add(renderobject);
       }
 
-      this.renderobjectwireframe = new THREE.WireframeHelper(this.renderobject, this.wireframecolor);
-      this.renderobjectwireframe.name = this.renderobject.name + "-wireframe";
+      var renderobjectwireframe = new THREE.WireframeHelper(renderobject, this.wireframecolor);
+      renderobjectwireframe.name = renderobject.name + "-wireframe";
 
       if(this.togglewireframe) {
-        this.scene.add(this.renderobjectwireframe);
+        scene.add(renderobjectwireframe);
       }
 
-      var boundingbox = this.renderobject.geometry.boundingBox;
+      var boundingbox = new THREE.Box3().setFromObject(renderobject);
+      var renderobjectboxhelper = new THREE.BoxHelper(renderobject);
+      renderobjectboxhelper.material.color.set(this.wireframecolor);
+
+      if(this.togglebox) {
+        scene.add(renderobjectboxhelper);
+      }
 
       var objectcenter = boundingbox.center();
 
-      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().z, boundingbox.size().x)/10)*10,
+      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().y, boundingbox.size().x)/10)*10,
                                                  10.0);
 
       objectfloorgrid.name = "GridHelper";
@@ -354,23 +363,32 @@
       // Turn floor to match Z-up orientation
       objectfloorgrid.rotation.x = 90*(Math.PI/180);
 
-      objectfloorgrid.position.x = objectcenter.x;
-      objectfloorgrid.position.y = objectcenter.y;
-      objectfloorgrid.position.z = boundingbox.min.z;
+      if(boundingbox.min.z < 0) {
+        renderobject.translateZ(-boundingbox.min.z);
+        boundingbox.setFromObject(renderobject);
+        renderobjectboxhelper.update(renderobject);
+      }
 
-      this.scene.add(objectfloorgrid);
+      scene.add(objectfloorgrid);
 
-      this.camera.position.z = boundingbox.max.z;
-      this.camera.position.y = boundingbox.max.y*-3;
-      this.camera.position.x = 0;
+      camera.position.z = boundingbox.max.z;
+      camera.position.y = boundingbox.max.y*-3;
+      camera.position.x = 0;
 
-      this.camera.lookAt(objectcenter);
+      console.log(objectcenter);
+      camera.lookAt(objectcenter);
 
       this.controls.target = objectcenter;
 
-      this.camera.updateProjectionMatrix();
+      camera.updateProjectionMatrix();
 
-      this.renderer.render(this.scene, this.camera);
+      renderer.render(scene, camera);
+
+      this.matsolid = matsolid;
+      this.renderobject = renderobject;
+      this.renderobjectwireframe = renderobjectwireframe;
+      this.renderobjectboxhelper = renderobjectboxhelper;
+      this.renderobjectboundingbox = boundingbox;
 
       this.renderel.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
     },
@@ -445,6 +463,16 @@
       this.renderer.render(this.scene, this.camera);
     },
 
+    onclickbtnboundingbox: function (e) {
+      if(this.toggleboundingbox) {
+        this.scene.add(this.renderobjectboxhelper);
+      } else {
+        this.scene.remove(this.renderobjectboxhelper);
+      }
+
+      this.renderer.render(this.scene, this.camera);
+    },
+
     onclickbtnexportstl: function (e) {
       var mesh = this.scene.getObjectByName(this.modelname);
 
@@ -466,7 +494,6 @@
 
       mesh.matrix.applyToVector3Array(vertices);
 
-      //4+4+4 9*4 + 2
       for(var vi = 0; vi < vertices.length; ) {
         stlbuffer.writeFloat32(0); // Normal a
         stlbuffer.writeFloat32(0); // Normal b
@@ -491,7 +518,47 @@
     onscalechange: function (e) {
       var obj = this.scene.getObjectByName(this.modelname);
 
+      if(this.scaleconstrain) {
+        if(e.target.name == "Scale X") {
+          this.scaley = this.scalex;
+          this.scalez = this.scalex;
+        } else if(e.target.name == "Scale Y") {
+          this.scalex = this.scaley;
+          this.scalez = this.scaley;
+        } else if(e.target.name == "Scale Z") {
+          this.scalex = this.scalez;
+          this.scaley = this.scalez;
+        } else {
+          var scale = Math.max(this.scalex, this.scaley, this.scalez);
+          this.scalex = scale;
+          this.scaley = scale;
+          this.scalez = scale;
+        }
+      }
+
+      if(this.scalex <= 0) {
+        this.scalex = 0.1;
+      }
+
+      if(this.scaley <= 0) {
+        this.scaley = 0.1;
+      }
+
+      if(this.scalez <= 0) {
+        this.scalez = 0.1;
+      }
+
       obj.scale.set(this.scalex, this.scaley, this.scalez);
+
+      this.renderobjectboundingbox.setFromObject(this.renderobject);
+
+      // Keep object above floor
+      if(this.renderobjectboundingbox.min.z < 0) {
+        obj.translateZ(-this.renderobjectboundingbox.min.z);
+      }
+
+      this.renderobjectboundingbox.setFromObject(this.renderobject);
+      this.renderobjectboxhelper.update(this.renderobject);
 
       this.renderer.render(this.scene, this.camera);
     },
@@ -552,11 +619,16 @@
         type: Number,
         value: 0.6
       },
+
       togglesolid: {
         type: Boolean,
         value: true
       },
       togglewireframe: {
+        type: Boolean,
+        value: false
+      },
+      toggleboundingbox: {
         type: Boolean,
         value: false
       },
@@ -585,7 +657,13 @@
       scalez: {
         type: Number,
         value: 1.0
+      },
+
+      scaleconstrain: {
+        type: Boolean,
+        value: false
       }
+
     }
   });
 </script>
