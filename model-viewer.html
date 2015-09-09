@@ -16,6 +16,8 @@
 <script src="../three.js/examples/js/loaders/STLLoader.js"></script>
 <script src="../bytebuffer/dist/ByteBufferAB.js"></script>
 <script src="../protobuf/dist/ProtoBuf.js"></script>
+<script src="../jszip/dist/jszip.min.js"></script>
+<script src="amfloader.js"></script>
 <script src="utility.js"></script>
 
 <dom-module id="model-viewer">
@@ -245,12 +247,14 @@
 
       this.spinner.setAttribute('active', true);
 
-      if (this.loadmethod == "stl" || this.loadmethod == "json") {
+      if (this.loadmethod == "stl" || this.loadmethod == "json" || this.loadmethod == "amf") {
 
         if(this.loadmethod == "stl") {
           var loader = new THREE.STLLoader();
         } else if(this.loadmethod == "json") {
           var loader = new THREE.JSONLoader();
+        } else if(this.loadmethod == "amf") {
+          var loader = new AMFLoader();
         }
         var loadedmodeldispatch = function(geometry, materials) {
           this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
@@ -280,9 +284,8 @@
 
             var msg = this.MeshMsg.decode(this.response);
 
-            var loader = new THREE.JSONLoader();
-            var m = loader.parse(msg);
-            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'name': this.modelname, 'materials': m.materials, 'geometry': m.geometry}});
+            var loader = new THREE.JSONLoader().parse(msg);
+            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'name': this.modelname, 'materials': loader.materials, 'geometry': loader.geometry}});
             this.renderel.dispatchEvent(loadedModelEvent);
           }
 
@@ -311,49 +314,19 @@
     loadedmodel: function(e) {
       console.log("Loaded model event");
 
-      var materials = e.detail.materials;
       var renderer = this.renderer;
       var scene = this.scene;
       var camera = this.camera;
 
+      var geometries = [];
+
+      var materials = [];
+
       var geometry = e.detail.geometry;
-
-      if(e.detail.geometry instanceof THREE.Geometry) {
-        geometry = new THREE.BufferGeometry();
-        geometry.fromGeometry(e.detail.geometry);
-      }
-
-      e.detail.geometry.dispose();
 
       renderer.setClearColor(this.backgroundcolor);
 
-      var matsolid = new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading });
-
-      renderobject = new THREE.Mesh(geometry, matsolid);
-      renderobject.name = e.detail.name || this.modelname;
-
-      if(this.togglesolid) {
-        scene.add(renderobject);
-      }
-
-      var renderobjectwireframe = new THREE.WireframeHelper(renderobject, this.wireframecolor);
-      renderobjectwireframe.name = renderobject.name + "-wireframe";
-
-      if(this.togglewireframe) {
-        scene.add(renderobjectwireframe);
-      }
-
-      var boundingbox = new THREE.Box3().setFromObject(renderobject);
-      var renderobjectboxhelper = new THREE.BoxHelper(renderobject);
-      renderobjectboxhelper.material.color.set(this.wireframecolor);
-
-      if(this.togglebox) {
-        scene.add(renderobjectboxhelper);
-      }
-
-      var objectcenter = boundingbox.center();
-
-      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(boundingbox.size().y, boundingbox.size().x)/10)*10,
+      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(500)/10)*10,
                                                  10.0);
 
       objectfloorgrid.name = "GridHelper";
@@ -363,19 +336,103 @@
       // Turn floor to match Z-up orientation
       objectfloorgrid.rotation.x = 90*(Math.PI/180);
 
-      if(boundingbox.min.z < 0) {
-        renderobject.translateZ(-boundingbox.min.z);
-        boundingbox.setFromObject(renderobject);
-        renderobjectboxhelper.update(renderobject);
-      }
-
       scene.add(objectfloorgrid);
 
-      camera.position.z = boundingbox.max.z;
-      camera.position.y = boundingbox.max.y*-3;
+      if(e.detail.materials === undefined) {
+        materials.push(new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading }));
+        materials.push(new THREE.MeshPhongMaterial({ color: 0x00ff00, shading: THREE.FlatShading }));
+      } else if(e.detail.materials instanceof Array) {
+        materials = e.detail.materials;
+      } else {
+        materials.push(e.detail.materials);
+      }
+
+      // Needs to handle multiple geometry loads - specifically for AMF
+      if(geometry instanceof Array) {
+        for(var i = 0; i < geometry.length; i++) {
+          if(geometry[i] instanceof THREE.Geometry) {
+            var bgeometry = new THREE.BufferGeometry();
+            bgeometry.fromGeometry(geometry[i]);
+            geometry[i].dispose();
+            geometries.push(bgeometry);
+          } else {
+            geometries.push(geometry[i]);
+          }
+        }
+      } else {
+        geometries.push(geometry);
+      }
+
+      // Ensure sane values
+      var min = {x: -1, y: -1, z: -1};
+      var max = {x: 1, y: 1, z: 1};
+
+      for(var i = 0; i < geometries.length; i++) {
+        var currmaterial = materials[0];
+
+        if(i < materials.length) {
+          currmaterial = materials[i];
+        }
+
+        var renderobject = new THREE.Mesh(geometries[i], currmaterial);
+        renderobject.name = geometries[i].name || this.modelname;
+
+        if(this.togglesolid) {
+          scene.add(renderobject);
+        }
+
+        var renderobjectwireframe = new THREE.WireframeHelper(renderobject, this.wireframecolor);
+        renderobjectwireframe.name = renderobject.name + "-wireframe";
+
+        if(this.togglewireframe) {
+          scene.add(renderobjectwireframe);
+        }
+
+        var boundingbox = new THREE.Box3().setFromObject(renderobject);
+
+        if(boundingbox.min.z < 0) {
+          renderobject.translateZ(-boundingbox.min.z);
+          boundingbox.setFromObject(renderobject);
+        }
+
+        if(boundingbox.max.x > max.x) {
+          max.x = boundingbox.max.x;
+        }
+
+        if(boundingbox.min.x < min.x) {
+          min.x = boundingbox.min.x;
+        }
+
+        if(boundingbox.max.y > max.y) {
+          max.y = boundingbox.max.y;
+        }
+
+        if(boundingbox.min.y < min.y) {
+          min.y = boundingbox.min.y;
+        }
+
+        if(boundingbox.max.z > max.z) {
+          max.z = boundingbox.max.z;
+        }
+
+        if(boundingbox.min.z < min.z) {
+          min.z = boundingbox.min.z;
+        }
+
+        var renderobjectboxhelper = new THREE.BoxHelper(renderobject);
+        renderobjectboxhelper.material.color.set(this.wireframecolor);
+
+        if(this.togglebox) {
+          scene.add(renderobjectboxhelper);
+        }
+      }
+
+      var objectcenter = new THREE.Vector3(0,0,0);
+
+      camera.position.z = max.z;
+      camera.position.y = max.z*-2;
       camera.position.x = 0;
 
-      console.log(objectcenter);
       camera.lookAt(objectcenter);
 
       this.controls.target = objectcenter;
@@ -384,7 +441,7 @@
 
       renderer.render(scene, camera);
 
-      this.matsolid = matsolid;
+      /* These need to go away */
       this.renderobject = renderobject;
       this.renderobjectwireframe = renderobjectwireframe;
       this.renderobjectboxhelper = renderobjectboxhelper;
@@ -591,6 +648,7 @@
       previewimg: {
         type: String
       },
+
       backgroundcolor: {
         type: Number,
         value: 0x0
