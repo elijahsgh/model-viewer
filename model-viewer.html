@@ -256,6 +256,7 @@
         } else if(this.loadmethod == "amf") {
           var loader = new AMFLoader();
         }
+        
         var loadedmodeldispatch = function(geometry, materials) {
           this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
         };
@@ -314,6 +315,7 @@
     loadedmodel: function(e) {
       console.log("Loaded model event");
 
+      console.log(e);
       var renderer = this.renderer;
       var scene = this.scene;
       var camera = this.camera;
@@ -351,7 +353,7 @@
         geometries.push(geometry);
       }
 
-      // Ensure sane values
+      // Ensure minimum values
       var min = {x: -1, y: -1, z: -1};
       var max = {x: 1, y: 1, z: 1};
 

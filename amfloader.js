@@ -32,14 +32,17 @@ AMFLoader.prototype = {
     loader.setResponseType('arraybuffer');
 
     loader.load(url, function(text) {
-      onLoad(scope.parse(text));
+      var result = scope.parse(text);
+      onLoad(result.geometry, result.materials);
     }, onProgress, onError);
   },
 
   parse: function(data) {
     var view = new DataView(data);
 
-    var geometries = [];
+    var geometry = [];
+    var materials = [];
+    var loadedmaterials = [];
 
     var magic = String.fromCharCode(view.getUint8(0)) + String.fromCharCode(view.getUint8(1));
 
@@ -94,6 +97,33 @@ AMFLoader.prototype = {
       return false;
     }
 
+    var amfmaterials = xmldata.getElementsByTagName('material');
+
+    for(var mati = 0; mati < amfmaterials.length; mati++) {
+      var material = amfmaterials[mati];
+      var matname = "AMF Material";
+      var matid = material.attributes['id'].textContent;
+      var r = 0, g = 0, b = 0;
+
+      for(var matci = 0; matci < material.children.length; matci++) {
+        if(material.children[matci].localName == "metadata") {
+          if(material.children[matci].attributes['type'].value.toLowerCase() == "name") {
+            matname = material.children[matci].textContent;
+          }
+        } else if(material.children[matci].localName == "color") {
+          var colorel = material.children[matci];
+
+          r = colorel.getElementsByTagName("r")[0].textContent;
+          g = colorel.getElementsByTagName("g")[0].textContent;
+          b = colorel.getElementsByTagName("b")[0].textContent;
+        }
+      }
+
+      var threemat = new THREE.MeshPhongMaterial({ color: new THREE.Color(r, g, b), shading: THREE.FlatShading });
+      threemat.amfmatid = matid;
+      loadedmaterials.push(threemat);
+    }
+
     for(var obji = 0; obji < objects.length; obji++) {
       var obj = objects[obji];
       var objname = 'AMF Object';
@@ -136,6 +166,8 @@ AMFLoader.prototype = {
           var volumes = meshes[meshi].getElementsByTagName('volume');
 
           for(var voli = 0; voli < volumes.length; voli++) {
+            var amfmatid = volumes[voli].attributes['materialid'].textContent;
+
             var triangles = volumes[voli].getElementsByTagName('triangle');
             var voffset = 0;
 
@@ -159,23 +191,35 @@ AMFLoader.prototype = {
               objvertarray[voffset++] = objvertices[v3].z
             }
 
-            var geometry = new THREE.BufferGeometry();
+            var threegeometry = new THREE.BufferGeometry();
 
             var scalematrix = new THREE.Matrix3();
             scalematrix.multiplyScalar(scale);
 
             scalematrix.applyToVector3Array(objvertarray);
 
-            geometry.addAttribute('position', new THREE.BufferAttribute(objvertarray, 3));
-            geometry.computeBoundingBox();
-            geometry.computeBoundingSphere();
-            geometries.push(geometry);
+            threegeometry.addAttribute('position', new THREE.BufferAttribute(objvertarray, 3));
+            threegeometry.computeBoundingBox();
+            threegeometry.computeBoundingSphere();
+
+            threegeometry.amfmatid = amfmatid;
+            geometry.push(threegeometry);
           }
         }
       }
     }
 
-    return geometries;
+    // Sort and build materials array
+    for(var geoi = 0; geoi < geometry.length; geoi++) {
+      for(var mati = 0; mati < loadedmaterials.length; mati++) {
+        if(geometry[geoi].amfmatid == loadedmaterials[mati].amfmatid) {
+          materials.push(loadedmaterials[mati]);
+          break;
+        }
+      }
+    }
+
+    return {geometry: geometry, materials: materials};
   }
 
 };
