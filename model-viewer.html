@@ -319,17 +319,16 @@
       var renderer = this.renderer;
       var scene = this.scene;
       var camera = this.camera;
-
       var geometries = [];
-
       var materials = [];
+      var defaultmaterial = new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading });
 
       var geometry = e.detail.geometry;
 
       renderer.setClearColor(this.backgroundcolor);
 
       if(e.detail.materials === undefined) {
-        materials.push(new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading }));
+        materials.push(defaultmaterial);
         materials.push(new THREE.MeshPhongMaterial({ color: 0x00ff00, shading: THREE.FlatShading }));
       } else if(e.detail.materials instanceof Array) {
         materials = e.detail.materials;
@@ -360,8 +359,10 @@
       for(var i = 0; i < geometries.length; i++) {
         var currmaterial = materials[0];
 
-        if(i < materials.length) {
+        if(i < materials.length && materials[i] != null) {
           currmaterial = materials[i];
+        } else {
+          currmaterial = defaultmaterial;
         }
 
         var renderobject = new THREE.Mesh(geometries[i], currmaterial);

@@ -117,7 +117,7 @@ AMFLoader.prototype = {
           g = colorel.getElementsByTagName("g")[0].textContent;
           b = colorel.getElementsByTagName("b")[0].textContent;
 
-          if(colorel.getElementsByTagName("a")) {
+          if(colorel.getElementsByTagName("a").length) {
             a = colorel.getElementsByTagName("a")[0].textContent;
           }
         }
@@ -218,12 +218,14 @@ AMFLoader.prototype = {
 
     // Sort and build materials array
     for(var geoi = 0; geoi < geometry.length; geoi++) {
+      var geotomat = null;
       for(var mati = 0; mati < loadedmaterials.length; mati++) {
         if(geometry[geoi].amfmatid == loadedmaterials[mati].amfmatid) {
-          materials.push(loadedmaterials[mati]);
+          geotomat = loadedmaterials[mati];
           break;
         }
       }
+      materials.push(geotomat);
     }
 
     return {geometry: geometry, materials: materials};
