@@ -103,7 +103,7 @@ AMFLoader.prototype = {
       var material = amfmaterials[mati];
       var matname = "AMF Material";
       var matid = material.attributes['id'].textContent;
-      var r = 0, g = 0, b = 0;
+      var r = 0, g = 0, b = 0, a = 1.0;
 
       for(var matci = 0; matci < material.children.length; matci++) {
         if(material.children[matci].localName == "metadata") {
@@ -116,6 +116,10 @@ AMFLoader.prototype = {
           r = colorel.getElementsByTagName("r")[0].textContent;
           g = colorel.getElementsByTagName("g")[0].textContent;
           b = colorel.getElementsByTagName("b")[0].textContent;
+
+          if(colorel.getElementsByTagName("a")) {
+            a = colorel.getElementsByTagName("a")[0].textContent;
+          }
         }
       }
 
@@ -166,7 +170,10 @@ AMFLoader.prototype = {
           var volumes = meshes[meshi].getElementsByTagName('volume');
 
           for(var voli = 0; voli < volumes.length; voli++) {
-            var amfmatid = volumes[voli].attributes['materialid'].textContent;
+            var amfmatid = 0;
+
+            if(volumes[voli].attributes['materialid'])
+              amfmatid = volumes[voli].attributes['materialid'].textContent;
 
             var triangles = volumes[voli].getElementsByTagName('triangle');
             var voffset = 0;
