@@ -326,18 +326,6 @@
 
       renderer.setClearColor(this.backgroundcolor);
 
-      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(500)/10)*10,
-                                                 10.0);
-
-      objectfloorgrid.name = "GridHelper";
-
-      objectfloorgrid.setColors(this.gridcolor, this.gridcolor);
-
-      // Turn floor to match Z-up orientation
-      objectfloorgrid.rotation.x = 90*(Math.PI/180);
-
-      scene.add(objectfloorgrid);
-
       if(e.detail.materials === undefined) {
         materials.push(new THREE.MeshPhongMaterial({ color: this.modelcolor, shading: THREE.FlatShading }));
         materials.push(new THREE.MeshPhongMaterial({ color: 0x00ff00, shading: THREE.FlatShading }));
@@ -397,25 +385,19 @@
 
         if(boundingbox.max.x > max.x) {
           max.x = boundingbox.max.x;
-        }
-
-        if(boundingbox.min.x < min.x) {
+        } else if(boundingbox.min.x < min.x) {
           min.x = boundingbox.min.x;
         }
 
         if(boundingbox.max.y > max.y) {
           max.y = boundingbox.max.y;
-        }
-
-        if(boundingbox.min.y < min.y) {
+        } else if(boundingbox.min.y < min.y) {
           min.y = boundingbox.min.y;
         }
 
         if(boundingbox.max.z > max.z) {
           max.z = boundingbox.max.z;
-        }
-
-        if(boundingbox.min.z < min.z) {
+        } else if(boundingbox.min.z < min.z) {
           min.z = boundingbox.min.z;
         }
 
@@ -426,6 +408,18 @@
           scene.add(renderobjectboxhelper);
         }
       }
+
+      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(Math.abs(min.x), Math.abs(max.x), Math.abs(min.y), Math.abs(max.y))/10)*10,
+                                                 10.0);
+
+      objectfloorgrid.name = "GridHelper";
+
+      objectfloorgrid.setColors(this.gridcolor, this.gridcolor);
+
+      // Turn floor to match Z-up orientation
+      objectfloorgrid.rotation.x = 90*(Math.PI/180);
+
+      scene.add(objectfloorgrid);
 
       var objectcenter = new THREE.Vector3(0,0,0);
 
