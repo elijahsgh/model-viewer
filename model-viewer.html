@@ -256,7 +256,7 @@
         } else if(this.loadmethod == "amf") {
           var loader = new AMFLoader();
         }
-        
+
         var loadedmodeldispatch = function(geometry, materials) {
           this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
         };
@@ -411,7 +411,7 @@
         }
       }
 
-      var objectfloorgrid = new THREE.GridHelper(Math.round(Math.max(Math.abs(min.x), Math.abs(max.x), Math.abs(min.y), Math.abs(max.y))/10)*10,
+      var objectfloorgrid = new THREE.GridHelper(Math.round((Math.max(max.x, max.y)/10)+1)*10,
                                                  10.0);
 
       objectfloorgrid.name = "GridHelper";
