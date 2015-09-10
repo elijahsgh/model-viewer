@@ -315,7 +315,6 @@
     loadedmodel: function(e) {
       console.log("Loaded model event");
 
-      console.log(e);
       var renderer = this.renderer;
       var scene = this.scene;
       var camera = this.camera;
@@ -339,17 +338,20 @@
       // Needs to handle multiple geometry loads - specifically for AMF
       if(geometry instanceof Array) {
         for(var i = 0; i < geometry.length; i++) {
-          if(geometry[i] instanceof THREE.Geometry) {
-            var bgeometry = new THREE.BufferGeometry();
-            bgeometry.fromGeometry(geometry[i]);
-            geometry[i].dispose();
-            geometries.push(bgeometry);
-          } else {
             geometries.push(geometry[i]);
-          }
         }
       } else {
         geometries.push(geometry);
+      }
+
+      // Convert any THREE.Geometry objects to THREE.BufferGeometry
+      for(var i = 0; i < geometries.length; i++) {
+        if(geometries[i] instanceof THREE.Geometry) {
+          var bgeometry = new THREE.BufferGeometry();
+          bgeometry.fromGeometry(geometries[i]);
+          geometries[i].dispose();
+          geometries[i] = bgeometry;
+        }
       }
 
       // Ensure minimum values
@@ -535,8 +537,9 @@
       var sizeofstl = 80+4+((vertices.length/9)*50);
       var faces = vertices.length/9;
 
-      console.log("Faces: " + faces + ", Vertices: " + vertices.length);
-      console.log("Size of STL: " + sizeofstl);
+      console.log("Exporting STL");
+      console.log("  Faces: " + faces + ", Vertices: " + vertices.length);
+      console.log("  Size of STL: " + sizeofstl);
 
       var stlbuffer = new dcodeIO.ByteBuffer(capacity=sizeofstl, littleEndian=true);
       var headerstring = "TamarinTech Model-Viewer STL Exporter: " + mesh.name;
@@ -583,6 +586,7 @@
           this.scalex = this.scalez;
           this.scaley = this.scalez;
         } else {
+          // The constraint button was toggled
           var scale = Math.max(this.scalex, this.scaley, this.scalez);
           this.scalex = scale;
           this.scaley = scale;

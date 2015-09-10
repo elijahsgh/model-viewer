@@ -10,7 +10,7 @@
  *    scene.add(new THREE.Mesh(geometry));
  *  });
  *
- * No support for materials (yet)
+ * Materials now supported, material colors supported
  * No support for colors (yet)
  * Zip support, requires jszip
  *
@@ -103,6 +103,7 @@ AMFLoader.prototype = {
       var material = amfmaterials[mati];
       var matname = "AMF Material";
       var matid = material.attributes['id'].textContent;
+      // Alpha not used, see THREE.Color
       var r = 0, g = 0, b = 0, a = 1.0;
 
       for(var matci = 0; matci < material.children.length; matci++) {
