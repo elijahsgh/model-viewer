@@ -472,9 +472,10 @@
       var toolbartoggles = this.getElementsByClassName('viewertoolbartoggles');
 
       for(var i = 0; i < toolbarbuttons.length; i++) {
-        if(toolbarbuttons[i].id != "button-scene-snapshot") {
-          toolbarbuttons[i].setAttribute('disabled', true);
+        if(toolbarbuttons[i].id == "button-scene-snapshot") {
+          continue;
         }
+        toolbarbuttons[i].setAttribute('disabled', true);
       }
 
       for(var i = 0; i < toolbartoggles.length; i++) {
