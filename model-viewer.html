@@ -11,13 +11,15 @@
 <link rel="import" href="../iron-collapse/iron-collapse.html">
 
 <script src="../three.js/build/three.min.js"></script>
-<script src="../three.js/examples/js/controls/OrbitControls.js"></script>
+
 <script src="../three.js/examples/js/Detector.js"></script>
 <script src="../three.js/examples/js/loaders/STLLoader.js"></script>
 <script src="../bytebuffer/dist/ByteBufferAB.js"></script>
 <script src="../protobuf/dist/ProtoBuf.js"></script>
 <script src="../jszip/dist/jszip.min.js"></script>
 <script src="amfloader.js"></script>
+
+<script src="model-viewer-OrbitControls.js"></script>
 <script src="utility.js"></script>
 
 <dom-module id="model-viewer">
@@ -122,10 +124,6 @@
             <paper-item>
               <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
               <span class="viewertoolbarlabels">Wireframe</span>
-            </paper-item>
-            <paper-item>
-              <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnsolid" checked={{togglesolid}} disabled></paper-toggle-button>
-              <span class="viewertoolbarlabels">Solid</span>
             </paper-item>
             <paper-item>
               <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnboundingbox" checked={{toggleboundingbox}} disabled></paper-toggle-button>
@@ -304,6 +302,7 @@
         console.log("Element has weird loadmethod: " + this.loadmethod);
       }
 
+      renderer.domElement.addEventListener('clickselect', this.onclickselect.bind(this));
       var controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.damping = 0.2;
       controls.addEventListener('change', render.bind(this));
@@ -360,6 +359,10 @@
 
       for(var i = 0; i < geometries.length; i++) {
         var currmaterial = materials[0];
+        var sceneobject = { mesh: null, togglesolid: false,
+                            wireframe: null, togglewireframe: false,
+                            boxhelper: null, toggleboxhelper: false,
+                            selection: null, selected: false};
 
         if(i < materials.length && materials[i] != null) {
           currmaterial = materials[i];
@@ -370,16 +373,19 @@
         var renderobject = new THREE.Mesh(geometries[i], currmaterial);
         renderobject.name = geometries[i].name || this.modelname;
 
-        if(this.togglesolid) {
-          scene.add(renderobject);
-        }
+        scene.add(renderobject);
+        sceneobject.togglesolid = true;
+
+        sceneobject.mesh = renderobject;
 
         var renderobjectwireframe = new THREE.WireframeHelper(renderobject, this.wireframecolor);
-        renderobjectwireframe.name = renderobject.name + "-wireframe";
+        renderobjectwireframe.name = "wireframe-" + renderobject.uuid;
 
         if(this.togglewireframe) {
           scene.add(renderobjectwireframe);
+          sceneobject.togglewireframe = true;
         }
+        sceneobject.wireframe = renderobjectwireframe;
 
         var boundingbox = new THREE.Box3().setFromObject(renderobject);
 
@@ -407,11 +413,16 @@
         }
 
         var renderobjectboxhelper = new THREE.BoxHelper(renderobject);
+        renderobjectboxhelper.name = "boxhelper-" + renderobject.uuid;
         renderobjectboxhelper.material.color.set(this.wireframecolor);
 
         if(this.togglebox) {
           scene.add(renderobjectboxhelper);
+          sceneobject.toggleboxhelper = true;
         }
+
+        sceneobject.boxhelper = renderobjectboxhelper;
+        this.sceneobjects.push(sceneobject);
       }
 
       var objectfloorgrid = new THREE.GridHelper(Math.round((Math.max(max.x, max.y)/10)+1)*10,
@@ -435,16 +446,11 @@
       camera.lookAt(objectcenter);
 
       this.controls.target = objectcenter;
+      this.selectedobject = this.sceneobjects[0].mesh.uuid;
 
       camera.updateProjectionMatrix();
 
       renderer.render(scene, camera);
-
-      /* These need to go away */
-      this.renderobject = renderobject;
-      this.renderobjectwireframe = renderobjectwireframe;
-      this.renderobjectboxhelper = renderobjectboxhelper;
-      this.renderobjectboundingbox = boundingbox;
 
       this.renderel.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
     },
@@ -499,38 +505,88 @@
       downloadlink.click();
     },
 
-    onclickbtnsolid: function (e) {
-      if(this.togglesolid) {
-        this.scene.add(this.renderobject);
-      } else {
-        this.scene.remove(this.renderobject);
+    onclickbtnwireframe: function (e) {
+      if(this.selectedobject === null) {
+        return;
       }
 
-      this.renderer.render(this.scene, this.camera);
-    },
+      var wireframename = "wireframe-" + this.selectedobject;
+      var sceneobject = null;
+      var renderobjectwireframe = null;
 
-    onclickbtnwireframe: function (e) {
-      if(this.togglewireframe) {
-        this.scene.add(this.renderobjectwireframe);
-      } else {
-        this.scene.remove(this.renderobjectwireframe);
+      for(var i = 0; i < this.sceneobjects.length; i++) {
+        if(this.sceneobjects[i].wireframe.name == wireframename) {
+          sceneobject = this.sceneobjects[i];
+          renderobjectwireframe = this.sceneobjects[i].wireframe;
+          break;
+        }
+      }
+
+      if(sceneobject === null) {
+        console.log("Cannot toggle boxhelper from " + this.selectedobject);
+        return;
+      }
+
+      if(this.selectedobject && this.togglewireframe) {
+        if(renderobjectwireframe) {
+          this.scene.add(renderobjectwireframe);
+          sceneobject.togglewireframe = true;
+        }
+      } else if (this.selectedobject) {
+        if(renderobjectwireframe) {
+          this.scene.remove(renderobjectwireframe);
+          sceneobject.togglewireframe = false;
+        }
       }
 
       this.renderer.render(this.scene, this.camera);
     },
 
     onclickbtnboundingbox: function (e) {
-      if(this.toggleboundingbox) {
-        this.scene.add(this.renderobjectboxhelper);
-      } else {
-        this.scene.remove(this.renderobjectboxhelper);
+      if(this.selectedobject === null) {
+        return;
+      }
+
+      var boxhelpername = "boxhelper-" + this.selectedobject;
+      var sceneobject = null;
+      var renderobjectboxhelper = null;
+
+      for(var i = 0; i < this.sceneobjects.length; i++) {
+        if(this.sceneobjects[i].boxhelper.name == boxhelpername) {
+          sceneobject = this.sceneobjects[i];
+          renderobjectboxhelper = this.sceneobjects[i].boxhelper;
+          break;
+        }
+      }
+
+      if(sceneobject === null) {
+        console.log("Cannot toggle boxhelper from " + this.selectedobject);
+        return;
+      }
+
+      if(this.selectedobject && this.toggleboundingbox) {
+        if(renderobjectboxhelper) {
+          this.scene.add(renderobjectboxhelper);
+          sceneobject.toggleboxhelper = true;
+        }
+      } else if (this.selectedobject) {
+        if(renderobjectboxhelper) {
+          this.scene.remove(renderobjectboxhelper);
+          sceneobject.toggleboxhelper = false;
+        }
       }
 
       this.renderer.render(this.scene, this.camera);
     },
 
     onclickbtnexportstl: function (e) {
-      var mesh = this.scene.getObjectByName(this.modelname);
+      //var mesh = this.scene.getObjectByName(this.modelname);
+      var mesh = this.getobjectbyuuid(this.selectedobject);
+
+      if(mesh == null) {
+        alert("Select an object");
+        return;
+      }
 
       var vertices = mesh.geometry.getAttribute('position').array.slice();
 
@@ -633,6 +689,58 @@
       this.renderer.render(this.scene, this.camera);
     },
 
+    onclickselect: function (e) {
+      var raycaster = new THREE.Raycaster();
+      var mouse = new THREE.Vector2();
+
+      var canvaswidth = this.renderer.domElement.width;
+      var canvasheight = this.renderer.domElement.height;
+
+      mouse.x = (e.detail.x / canvaswidth) * 2 - 1;
+      mouse.y = - (e.detail.y / canvasheight) * 2 + 1;
+
+      var objects = this.scene.children;
+      var selectableobjects = [];
+
+      for(var i = 0; i < objects.length; i++) {
+        if(objects[i] instanceof THREE.Mesh) {
+          selectableobjects.push(objects[i]);
+        }
+      }
+
+      raycaster.setFromCamera(mouse, this.camera);
+
+      var intersections = raycaster.intersectObjects(selectableobjects, true);
+
+      if(intersections.length) {
+        this.selectedobject = intersections[0].object.uuid;
+        this.selectedface = intersections[0];
+
+        for(var i = 0; i < this.sceneobjects.length; i++) {
+          if(this.sceneobjects[i].mesh.uuid == this.selectedobject) {
+            this.togglewireframe = this.sceneobjects[i].togglewireframe;
+            this.togglesolid = this.sceneobjects[i].togglesolid;
+            this.toggleboundingbox = this.sceneobjects[i].toggleboxhelper;
+          }
+        }
+      } else {
+        this.selectedobject = null;
+        this.selectedface = null;
+      }
+    },
+
+    getobjectbyuuid: function (uuid) {
+      var result = null;
+
+      for(var i = 0; i < this.scene.children.length; i++) {
+        if(this.scene.children[i].uuid == uuid) {
+          result = this.scene.children[i];
+        }
+      }
+
+      return result;
+    },
+
     properties: {
       model: {
         type: String
@@ -679,10 +787,6 @@
         value: 0.6
       },
 
-      togglesolid: {
-        type: Boolean,
-        value: true
-      },
       togglewireframe: {
         type: Boolean,
         value: false
@@ -721,6 +825,19 @@
       scaleconstrain: {
         type: Boolean,
         value: false
+      },
+
+      selectedobject: {
+        type: Object,
+        value: null
+      },
+      selectedface: {
+        type: Object,
+        value: null
+      },
+      sceneobjects: {
+        type: Array,
+        value: []
       }
 
     }
