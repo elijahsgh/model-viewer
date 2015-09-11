@@ -308,6 +308,11 @@
       controls.addEventListener('change', render.bind(this));
       this.controls = controls;
 
+      this.selectionmaterial = new THREE.MeshPhongMaterial({color: 0x00dd11, shading: THREE.FlatShading});
+
+      this.selectionmaterial.transparent = true;
+      this.selectionmaterial.opacity = 0.9;
+
       window.addEventListener("resize", this.viewerresized.bind(this));
     },
 
@@ -327,7 +332,7 @@
 
       if(e.detail.materials === undefined) {
         materials.push(defaultmaterial);
-        materials.push(new THREE.MeshPhongMaterial({ color: 0x00ff00, shading: THREE.FlatShading }));
+        materials.push(new THREE.MeshPhongMaterial({ color: 0x24c92a, shading: THREE.FlatShading }));
       } else if(e.detail.materials instanceof Array) {
         materials = e.detail.materials;
       } else {
@@ -360,6 +365,7 @@
       for(var i = 0; i < geometries.length; i++) {
         var currmaterial = materials[0];
         var sceneobject = { mesh: null, togglesolid: false,
+                            originalmaterial: null,
                             wireframe: null, togglewireframe: false,
                             boxhelper: null, toggleboxhelper: false,
                             selection: null, selected: false};
@@ -369,6 +375,8 @@
         } else {
           currmaterial = defaultmaterial;
         }
+
+        sceneobject.originalmaterial = currmaterial;
 
         var renderobject = new THREE.Mesh(geometries[i], currmaterial);
         renderobject.name = geometries[i].name || this.modelname;
@@ -708,6 +716,14 @@
         }
       }
 
+      if(this.selectedobject) {
+        for(var i = 0; i < this.sceneobjects.length; i++) {
+          if(this.sceneobjects[i].mesh.uuid == this.selectedobject) {
+            this.sceneobjects[i].mesh.material = this.sceneobjects[i].originalmaterial;
+          }
+        }
+      }
+
       raycaster.setFromCamera(mouse, this.camera);
 
       var intersections = raycaster.intersectObjects(selectableobjects, true);
@@ -721,12 +737,16 @@
             this.togglewireframe = this.sceneobjects[i].togglewireframe;
             this.togglesolid = this.sceneobjects[i].togglesolid;
             this.toggleboundingbox = this.sceneobjects[i].toggleboxhelper;
+            this.sceneobjects[i].mesh.material = this.selectionmaterial;
           }
         }
       } else {
         this.selectedobject = null;
         this.selectedface = null;
       }
+
+      this.renderer.render(this.scene, this.camera);
+
     },
 
     getobjectbyuuid: function (uuid) {
