@@ -27,7 +27,7 @@
     "paper-elements": "Polymerelements/paper-elements#~1.0.1",
     "polymer": "~1.1.2",
     "protobuf": "~4.0.0",
-    "three.js": "threejs#r71",
+    "three.js": "threejs#r72",
     "jszip": "~2.5.0"
   }
 }

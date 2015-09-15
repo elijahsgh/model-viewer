@@ -88,7 +88,6 @@
       color: black;
       text-transform: uppercase;
       display: inline;
-      margin: 0.5em;
     }
 
     .btnexportlabel {
@@ -109,53 +108,60 @@
   </style>
 
   <template>
-      <div class="viewercontainer" on-scenerendered="scenerendered" on-loadedmodel="loadedmodel">
+      <div class="viewercontainer" on-scenerendered="scenerendered" on-modelloaded="modelloaded">
         <img class="placeholderimg" src="{{previewimg}}"/>
-        <paper-button class="buttonloadmodel" on-click="loadmodel" raised>
+        <paper-button class="buttonloadmodel" on-click="onLoadModel" raised>
           <iron-icon icon="icons:3d-rotation"></iron-icon>
         </paper-button class="viewertoolbar">
         <paper-spinner class="loadingspinner" inactive></paper-spinner>
       </div>
 
-      <iron-collapse class="toolbarcollapse">
+      <iron-collapse class="controlscollapse">
         <div class="viewertoolscontainer">
-          <paper-item class="viewertoolbarlabels">Scene Controls</paper-item>
+          <template is="dom-if" if="{{selectedobject}}">
+            <div class="viewertoolbarcontainer horizontal layout wrap flex">
+              <paper-item>{{selectedobject.mesh.name}}</paper-item>
+              <span class="flex"></span>
+              <paper-button class="viewertoolbarbuttons" on-click="exportstl" raised>
+                <iron-icon icon="icons:launch"></iron-icon>
+                <paper-item class="btnexportlabel">STL</paper-item>
+              </paper-button>
+            </div>
+          </template>
+          <template is="dom-if" if="{{!selectedobject}}">
+            <paper-item>No model selected</paper-item>
+          </template>
+
           <div class="viewertoolbarcontainer horizontal layout wrap flex">
             <paper-item>
-              <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnwireframe" checked={{togglewireframe}} disabled></paper-toggle-button>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="togglewireframe" checked={{enablewireframe}} disabled></paper-toggle-button>
               <span class="viewertoolbarlabels">Wireframe</span>
             </paper-item>
             <paper-item>
-              <paper-toggle-button class="viewertoolbartoggles" on-change="onclickbtnboundingbox" checked={{toggleboundingbox}} disabled></paper-toggle-button>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="toggleboundingbox" checked={{enableboundingbox}} disabled></paper-toggle-button>
               <span class="viewertoolbarlabels">Bounding Box</span>
             </paper-item>
           </div>
 
-          <paper-item class="viewertoolbarlabels">Model Scale</paper-item>
           <div class="viewertoolbarcontainer horizontal layout wrap flex">
-            <paper-input name="Scale X" label="Scale X" class="scaleinputs numfloat" type="number" value="{{scalex}}" on-change="onscalechange"></paper-input>
-            <paper-input name="Scale Y" label="Scale Y" class="scaleinputs numfloat" type="number" value="{{scaley}}" on-change="onscalechange"></paper-input>
-            <paper-input name="Scale Z" label="Scale Z" class="scaleinputs numfloat" type="number" value="{{scalez}}" on-change="onscalechange"></paper-input>
+            <paper-input name="Scale X" label="Scale X" class="scaleinputs numfloat" type="number" value="{{scalex}}" on-change="scalechange"></paper-input>
+            <paper-input name="Scale Y" label="Scale Y" class="scaleinputs numfloat" type="number" value="{{scaley}}" on-change="scalechange"></paper-input>
+            <paper-input name="Scale Z" label="Scale Z" class="scaleinputs numfloat" type="number" value="{{scalez}}" on-change="scalechange"></paper-input>
             <paper-item>
-              <paper-toggle-button class="viewertoolbartoggles" on-change="onscalechange" checked={{scaleconstrain}} on-change="onscalechange" disabled></paper-toggle-button>
+              <paper-toggle-button class="viewertoolbartoggles" on-change="scalechange" checked={{scaleconstrain}} on-change="scalechange" disabled></paper-toggle-button>
               <span class="viewertoolbarlabels">Constrain Scale</span>
             </paper-item>
           </div>
 
-          <paper-item class="viewertoolbarlabels">Model Rotation</paper-item>
           <div class="viewertoolbarcontainer horizontal layout wrap flex">
-            <paper-input label="Rotate X" class="scaleinputs numfloat" type="number" value="{{rotatex}}" on-change="onrotatechange"></paper-input>
-            <paper-input label="Rotate Y" class="scaleinputs numfloat" type="number" value="{{rotatey}}" on-change="onrotatechange"></paper-input>
-            <paper-input label="Rotate Z" class="scaleinputs numfloat" type="number" value="{{rotatez}}" on-change="onrotatechange"></paper-input>
+            <paper-input label="Rotate X" class="scaleinputs numfloat" type="number" value="{{rotatex}}" on-change="rotatechange"></paper-input>
+            <paper-input label="Rotate Y" class="scaleinputs numfloat" type="number" value="{{rotatey}}" on-change="rotatechange"></paper-input>
+            <paper-input label="Rotate Z" class="scaleinputs numfloat" type="number" value="{{rotatez}}" on-change="rotatechange"></paper-input>
           </div>
 
-          <paper-item class="viewertoolbarlabels">Export</paper-item>
+          <paper-item class="viewertoolbarlabels">Extras</paper-item>
           <div class="viewertoolbarcontainer horizontal layout wrap flex">
-            <paper-button class="viewertoolbarbuttons" on-click="onclickbtnexportstl" raised disabled>
-              <iron-icon icon="icons:launch"></iron-icon>
-              <paper-item class="btnexportlabel">STL</paper-item>
-            </paper-button>
-            <paper-button class="viewertoolbarbuttons button-scene-snapshot" on-click="onclickbtncapture" raised>
+            <paper-button class="viewertoolbarbuttons button-scene-snapshot" on-click="capturescene" raised>
               <iron-icon icon="icons:camera-enhance"></iron-icon>
             </paper-button>
           </div>
@@ -175,8 +181,8 @@
     attached: function() {
     },
 
-    loadmodel: function() {
-      var renderel = this.getElementsByClassName("viewercontainer")[0];
+    onLoadModel: function() {
+      var renderElement = this.getElementsByClassName("viewercontainer")[0];
 
       if(!Detector.webgl) {
         var glerror = Detector.getWebGLErrorMessage();
@@ -184,30 +190,30 @@
         glerror.style.margin = "";
         glerror.style.width = "100%";
 
-        renderel.innerHTML = '';
-        renderel.appendChild(glerror);
+        renderElement.innerHTML = '';
+        renderElement.appendChild(glerror);
 
         return;
       }
 
       var spinner = this.getElementsByClassName("loadingspinner")[0];
 
-      this.renderel = renderel;
+      this.renderElement = renderElement;
       this.spinner = spinner;
 
       // Keep square by using width twice
-      var viewerheight = renderel.offsetWidth;
-      var viewerwidth = renderel.offsetWidth;
-      var aspectratio = viewerwidth / viewerheight;
+      var viewerHeight = renderElement.offsetWidth;
+      var viewerWidth = renderElement.offsetWidth;
+      var aspectRatio = viewerWidth / viewerHeight;
 
-      this.viewerheight = viewerheight;
-      this.viewerwidth = viewerwidth;
-      this.aspectratio = aspectratio;
+      this.viewerHeight = viewerHeight;
+      this.viewerWidth = viewerWidth;
+      this.aspectRatio = aspectRatio;
 
       var scene = new THREE.Scene();
       this.scene = scene;
 
-      var camera = new THREE.PerspectiveCamera(60, this.aspectratio, 0.1, 1000);
+      var camera = new THREE.PerspectiveCamera(60, this.aspectRatio, 0.1, 1000);
       this.camera = camera;
 
       scene.fog = new THREE.Fog(0xeeeeee, 1, 500);
@@ -241,28 +247,27 @@
         this.renderer.render(this.scene, this.camera);
       }
 
-      renderer.setSize(viewerwidth, viewerheight);
+      renderer.setSize(viewerWidth, viewerHeight);
 
       this.spinner.setAttribute('active', true);
 
-      if (this.loadmethod == "stl" || this.loadmethod == "json" || this.loadmethod == "amf") {
-
-        if(this.loadmethod == "stl") {
+      if (this.loadmethod === "stl" || this.loadmethod === "json" || this.loadmethod === "amf") {
+        if(this.loadmethod === "stl") {
           var loader = new THREE.STLLoader();
-        } else if(this.loadmethod == "json") {
+        } else if(this.loadmethod === "json") {
           var loader = new THREE.JSONLoader();
-        } else if(this.loadmethod == "amf") {
+        } else if(this.loadmethod === "amf") {
           var loader = new AMFLoader();
         }
 
-        var loadedmodeldispatch = function(geometry, materials) {
-          this.renderel.dispatchEvent(new CustomEvent('loadedmodel', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
+        var modelloadeddispatch = function(geometry, materials) {
+          this.renderElement.dispatchEvent(new CustomEvent('modelloaded', {'detail': { 'geometry': geometry, 'materials': materials, 'name': this.modelname}}));
         };
 
-        loader.load(this.model, loadedmodeldispatch.bind(this));
-      } else if (this.loadmethod == "protobuf") {
+        loader.load(this.model, modelloadeddispatch.bind(this));
+      } else if (this.loadmethod === "protobuf") {
         var xhr = new XMLHttpRequest();
-        xhr.renderel = this.renderel;
+        xhr.renderElement = this.renderElement;
 
         xhr.open("GET", this.proto, true);
 
@@ -284,12 +289,12 @@
             var msg = this.MeshMsg.decode(this.response);
 
             var loader = new THREE.JSONLoader().parse(msg);
-            var loadedModelEvent = new CustomEvent('loadedmodel', {'detail': {'name': this.modelname, 'materials': loader.materials, 'geometry': loader.geometry}});
-            this.renderel.dispatchEvent(loadedModelEvent);
+            var modelLoadedEvent = new CustomEvent('modelLoaded', {'detail': {'name': this.modelname, 'materials': loader.materials, 'geometry': loader.geometry}});
+            this.renderElement.dispatchEvent(modelLoadedEvent);
           }
 
           pb_xhr.MeshMsg = MeshMsg;
-          pb_xhr.renderel = this.renderel;
+          pb_xhr.renderElement = this.renderElement;
           pb_xhr.modelname = this.modelname
           pb_xhr.send();
 
@@ -302,7 +307,8 @@
         console.log("Element has weird loadmethod: " + this.loadmethod);
       }
 
-      renderer.domElement.addEventListener('clickselect', this.onclickselect.bind(this));
+      renderer.domElement.addEventListener("clickselect", this.onclickselect.bind(this));
+
       var controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.damping = 0.2;
       controls.addEventListener('change', render.bind(this));
@@ -311,12 +317,12 @@
       this.selectionmaterial = new THREE.MeshPhongMaterial({color: 0x00dd11, shading: THREE.FlatShading});
 
       this.selectionmaterial.transparent = true;
-      this.selectionmaterial.opacity = 0.9;
+      this.selectionmaterial.opacity = 0.95;
 
       window.addEventListener("resize", this.viewerresized.bind(this));
     },
 
-    loadedmodel: function(e) {
+    modelloaded: function(e) {
       console.log("Loaded model event");
 
       var renderer = this.renderer;
@@ -364,15 +370,15 @@
 
       for(var i = 0; i < geometries.length; i++) {
         var currmaterial = materials[0];
-        var sceneobject = { mesh: null, togglesolid: false, boundingbox: null,
+        var sceneobject = { mesh: null, boundingbox: null,
                             originalmaterial: null,
-                            wireframe: null, togglewireframe: false,
-                            boxhelper: null, toggleboxhelper: false,
+                            wireframe: null, enablewireframe: false,
+                            boxhelper: null, enableboxhelper: false,
                             selected: false,
                             rotation: {x: 0, y: 0, z: 0},
                             scale: {x: 1.0, y: 1.0, z: 1.0, constrain: true}};
 
-        if(i < materials.length && materials[i] != null) {
+        if(i < materials.length && materials[i] !== null) {
           currmaterial = materials[i];
         } else {
           currmaterial = defaultmaterial;
@@ -384,18 +390,16 @@
         renderobject.name = geometries[i].name || this.modelname;
 
         scene.add(renderobject);
-        sceneobject.togglesolid = true;
 
         sceneobject.mesh = renderobject;
 
         var renderobjectwireframe = new THREE.WireframeHelper(renderobject, 0xffffff);
         renderobjectwireframe.name = "wireframe-" + renderobject.uuid;
 
-        if(this.togglewireframe) {
-          scene.add(renderobjectwireframe);
-          sceneobject.togglewireframe = true;
-        }
+        scene.add(renderobjectwireframe);
 
+        renderobjectwireframe.visible = this.enablewireframe;
+        sceneobject.enablewireframe = this.enablewireframe;
         sceneobject.wireframe = renderobjectwireframe;
 
         var boundingbox = new THREE.Box3().setFromObject(renderobject);
@@ -407,34 +411,22 @@
           boundingbox.setFromObject(renderobject);
         }
 
-        if(boundingbox.max.x > max.x) {
-          max.x = boundingbox.max.x;
-        } else if(boundingbox.min.x < min.x) {
-          min.x = boundingbox.min.x;
-        }
-
-        if(boundingbox.max.y > max.y) {
-          max.y = boundingbox.max.y;
-        } else if(boundingbox.min.y < min.y) {
-          min.y = boundingbox.min.y;
-        }
-
-        if(boundingbox.max.z > max.z) {
-          max.z = boundingbox.max.z;
-        } else if(boundingbox.min.z < min.z) {
-          min.z = boundingbox.min.z;
-        }
+        max.x = Math.max(boundingbox.max.x, max.x);
+        min.x = Math.min(boundingbox.min.x, min.x);
+        max.y = Math.max(boundingbox.max.y, max.y);
+        min.y = Math.min(boundingbox.min.y, min.y);
+        max.z = Math.max(boundingbox.max.z, max.z);
+        min.z = Math.min(boundingbox.min.z, min.z);
 
         var renderobjectboxhelper = new THREE.BoxHelper(renderobject);
         renderobjectboxhelper.name = "boxhelper-" + renderobject.uuid;
         renderobjectboxhelper.material.color.set(this.wireframecolor);
 
-        if(this.togglebox) {
-          scene.add(renderobjectboxhelper);
-          sceneobject.toggleboxhelper = true;
-        }
-
+        scene.add(renderobjectboxhelper);
+        renderobjectboxhelper.visible = this.enableboundingbox;
+        sceneobject.enableboxhelper = this.enableboundingbox;
         sceneobject.boxhelper = renderobjectboxhelper;
+
         this.sceneobjects.push(sceneobject);
       }
 
@@ -464,7 +456,7 @@
 
       renderer.render(scene, camera);
 
-      this.renderel.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
+      this.renderElement.dispatchEvent(new CustomEvent('scenerendered', {'detail': {'renderElement': this.renderer.domElement}}));
     },
 
     disablebuttons: function() {
@@ -501,20 +493,20 @@
       console.log("Scene rendered!");
 
       this.spinner.removeAttribute('active');
-      this.renderel.innerHTML = "";
+      this.renderElement.innerHTML = "";
       this.modelscene = e.detail;
 
-      this.renderel.innerHTML = '';
-      this.renderel.appendChild(e.detail.renderElement);
+      this.renderElement.innerHTML = '';
+      this.renderElement.appendChild(e.detail.renderElement);
 
-      var collapsed = this.getElementsByClassName('toolbarcollapse');
+      var collapsed = this.getElementsByClassName('controlscollapse');
 
       collapsed[0].toggle();
     },
 
     viewerresized: function(e) {
-      var renderwidth = this.renderel.offsetWidth;
-      var renderheight = this.renderel.offsetWidth;
+      var renderwidth = this.renderElement.offsetWidth;
+      var renderheight = this.renderElement.offsetWidth;
 
       // Keep squared
       this.renderwidth = renderwidth;
@@ -527,7 +519,7 @@
       }
     },
 
-    onclickbtncapture: function(e) {
+    capturescene: function(e) {
       this.renderer.render(this.scene, this.camera);
       this.renderer.capture = this.renderer.domElement.toDataURL();
 
@@ -537,42 +529,32 @@
       downloadlink.click();
     },
 
-    onclickbtnwireframe: function (e) {
+    togglewireframe: function (e) {
       if(this.selectedobject === null) {
         return;
       }
 
-      if(this.togglewireframe) {
-        this.scene.add(this.selectedobject.wireframe);
-        this.selectedobject.togglewireframe = true;
-      } else {
-        this.scene.remove(this.selectedobject.wireframe);
-        this.selectedobject.togglewireframe = false;
-      }
+      this.selectedobject.wireframe.visible = this.enablewireframe;
+      this.selectedobject.enablewireframe = this.enablewireframe;
 
       this.renderer.render(this.scene, this.camera);
     },
 
-    onclickbtnboundingbox: function (e) {
+    toggleboundingbox: function (e) {
       if(this.selectedobject === null) {
         return;
       }
 
       var boxhelpername = "boxhelper-" + this.selectedobject;
 
-      if(this.toggleboundingbox) {
-        this.scene.add(this.selectedobject.boxhelper);
-        this.selectedobject.toggleboxhelper = true;
-      } else {
-        this.scene.remove(this.selectedobject.boxhelper);
-        this.selectedobject.toggleboxhelper = false;
-      }
+      this.selectedobject.boxhelper.visible = this.enableboundingbox;
+      this.selectedobject.enableboxhelper = this.enableboundingbox;
 
       this.renderer.render(this.scene, this.camera);
     },
 
-    onclickbtnexportstl: function (e) {
-      if(this.selectedobject == null) {
+    exportstl: function (e) {
+      if(this.selectedobject === null) {
         alert("Select an object");
         return;
       }
@@ -619,8 +601,8 @@
       a.click();
     },
 
-    onscalechange: function (e) {
-      if(this.selectedobject == null) {
+    scalechange: function (e) {
+      if(this.selectedobject === null) {
         return;
       }
 
@@ -629,13 +611,13 @@
       obj.scale.constrain = this.scaleconstrain;
 
       if(obj.scale.constrain) {
-        if(e.target.name == "Scale X") {
+        if(e.target.name === "Scale X") {
           this.scaley = this.scalex;
           this.scalez = this.scalex;
-        } else if(e.target.name == "Scale Y") {
+        } else if(e.target.name === "Scale Y") {
           this.scalex = this.scaley;
           this.scalez = this.scaley;
-        } else if(e.target.name == "Scale Z") {
+        } else if(e.target.name === "Scale Z") {
           this.scalex = this.scalez;
           this.scaley = this.scalez;
         } else {
@@ -678,8 +660,8 @@
       this.renderer.render(this.scene, this.camera);
     },
 
-    onrotatechange: function (e) {
-      if(this.selectedobject == null) {
+    rotatechange: function (e) {
+      if(this.selectedobject === null) {
         return;
       }
 
@@ -718,7 +700,7 @@
 
       if(this.selectedobject) {
         for(var i = 0; i < this.sceneobjects.length; i++) {
-          if(this.sceneobjects[i] == this.selectedobject) {
+          if(this.sceneobjects[i] === this.selectedobject) {
             this.sceneobjects[i].mesh.material = this.sceneobjects[i].originalmaterial;
           }
         }
@@ -733,11 +715,10 @@
         this.selectedface = intersections[0];
 
         for(var i = 0; i < this.sceneobjects.length; i++) {
-          if(this.sceneobjects[i].mesh.uuid == selectedobjectuuid) {
+          if(this.sceneobjects[i].mesh.uuid === selectedobjectuuid) {
             this.selectedobject = this.sceneobjects[i];
-            this.togglewireframe = this.selectedobject.togglewireframe;
-            this.togglesolid = this.selectedobject.togglesolid;
-            this.toggleboundingbox = this.selectedobject.toggleboxhelper;
+            this.enablewireframe = this.selectedobject.enablewireframe;
+            this.enableboundingbox = this.selectedobject.enableboxhelper;
 
             this.rotatex = this.selectedobject.rotation.x;
             this.rotatey = this.selectedobject.rotation.y;
@@ -823,11 +804,11 @@
         value: 0.6
       },
 
-      togglewireframe: {
+      enablewireframe: {
         type: Boolean,
         value: false
       },
-      toggleboundingbox: {
+      enableboundingbox: {
         type: Boolean,
         value: false
       },
