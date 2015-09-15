@@ -669,7 +669,7 @@
 
       // Keep object above floor
       if(obj.boundingbox.min.z < 0) {
-        obj.translateZ(-obj.boundingbox.min.z);
+        obj.mesh.translateZ(-obj.boundingbox.min.z);
       }
 
       obj.boundingbox.setFromObject(obj.mesh);
