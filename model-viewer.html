@@ -155,7 +155,7 @@
               <iron-icon icon="icons:launch"></iron-icon>
               <paper-item class="btnexportlabel">STL</paper-item>
             </paper-button>
-            <paper-button id="button-scene-snapshot" class="viewertoolbarbuttons" on-click="onclickbtncapture" raised>
+            <paper-button class="viewertoolbarbuttons button-scene-snapshot" on-click="onclickbtncapture" raised>
               <iron-icon icon="icons:camera-enhance"></iron-icon>
             </paper-button>
           </div>
@@ -472,7 +472,8 @@
       var toolbartoggles = this.getElementsByClassName('viewertoolbartoggles');
 
       for(var i = 0; i < toolbarbuttons.length; i++) {
-        if(toolbarbuttons[i].id == "button-scene-snapshot") {
+        if(toolbarbuttons[i].classList.contains("button-scene-snapshot")) {
+
           continue;
         }
         toolbarbuttons[i].setAttribute('disabled', true);
