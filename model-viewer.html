@@ -88,6 +88,7 @@
       color: black;
       text-transform: uppercase;
       display: inline;
+      margin: 0 0.5em;
     }
 
     .btnexportlabel {
@@ -561,7 +562,26 @@
 
       var mesh = this.selectedobject.mesh;
 
-      var vertices = mesh.geometry.getAttribute('position').array.slice();
+      var meshgeometry = mesh.geometry.getAttribute('position').clone();
+      var vertices = null;
+
+      // Convert indexed BufferGeometry to non-indexed to apply matrix, easier index, etc
+      if(mesh.geometry.getAttribute('index') === undefined) {
+        console.log("Non-indexed geometry");
+        vertices = meshgeometry.array;
+      } else {
+        console.log("Indexed geometry");
+        var faces = mesh.geometry.getAttribute('index').array;
+        var vertarray = new Float32Array(faces);
+
+        for(var i = 0; i < faces.length; i++) {
+          vertarray[i] = meshgeometry.array[faces[i]];
+        }
+
+        vertices = vertarray;
+      }
+
+      mesh.matrix.applyToVector3Array(vertices);
 
       var sizeofstl = 80+4+((vertices.length/9)*50);
       var faces = vertices.length/9;
@@ -577,8 +597,6 @@
       stlbuffer.skip(80 - headerstring.length);
 
       stlbuffer.writeUint32(vertices.length/9);
-
-      mesh.matrix.applyToVector3Array(vertices);
 
       for(var vi = 0; vi < vertices.length; ) {
         stlbuffer.writeFloat32(0); // Normal a
