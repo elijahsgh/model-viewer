@@ -560,6 +560,7 @@
       downloadlink.href = this.renderer.capture;
       document.body.appendChild(downloadlink);
       downloadlink.click();
+      document.body.removeChild(a);
     },
 
     togglewireframe: function (e) {
@@ -650,6 +651,7 @@
       a.download = mesh.name + ".stl";
       document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
     },
 
     scalechange: function (e) {
