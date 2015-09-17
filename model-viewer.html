@@ -195,28 +195,24 @@
     attached: function() {
     },
 
-    expandmodelcontrols: function(e) {
+    toggleExpandIcon: function(control, toggleicon) {
       var icon = "icons:expand-less";
 
-      this.$.expandmodelcontrols.toggle();
+      control.toggle();
 
-      if(this.$.expandmodelcontrolstoggle.getAttribute('icon') === "icons:expand-less") {
+      if(toggleicon.getAttribute('icon') === "icons:expand-less") {
         icon = "icons:expand-more";
       }
 
-      this.$.expandmodelcontrolstoggle.setAttribute('icon', icon);
+      toggleicon.setAttribute('icon', icon);
+    },
+
+    expandmodelcontrols: function(e) {
+      this.toggleExpandIcon(this.$.expandmodelcontrols, this.$.expandmodelcontrolstoggle);
     },
 
     expandextras: function(e) {
-      var icon = "icons:expand-less";
-
-      this.$.expandextras.toggle();
-
-      if(this.$.expandextrastoggle.getAttribute('icon') === "icons:expand-less") {
-        icon = "icons:expand-more";
-      }
-
-      this.$.expandextrastoggle.setAttribute('icon', icon);
+      this.toggleExpandIcon(this.$.expandextras, this.$.expandextrastoggle);
     },
 
     onloadmodel: function() {
