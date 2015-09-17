@@ -558,6 +558,7 @@
       var downloadlink = document.createElement('a');
       downloadlink.download = this.modelname + ".png";
       downloadlink.href = this.renderer.capture;
+      document.body.appendChild(downloadlink);
       downloadlink.click();
     },
 
@@ -647,6 +648,7 @@
       var stlblob = new Blob([stlbuffer.toArrayBuffer()], {type: "octet/stream"});
       a.href = window.URL.createObjectURL(stlblob);
       a.download = mesh.name + ".stl";
+      document.body.appendChild(a);
       a.click();
     },
 
