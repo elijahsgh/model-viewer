@@ -323,7 +323,7 @@
             var msg = this.MeshMsg.decode(this.response);
 
             var loader = new THREE.JSONLoader().parse(msg);
-            var modelLoadedEvent = new CustomEvent('modelLoaded', {'detail': {'name': this.modelname, 'materials': loader.materials, 'geometry': loader.geometry}});
+            var modelLoadedEvent = new CustomEvent('modelloaded', {'detail': {'name': this.modelname, 'materials': loader.materials, 'geometry': loader.geometry}});
             this.renderElement.dispatchEvent(modelLoadedEvent);
           }
 
