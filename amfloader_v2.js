@@ -42,12 +42,43 @@ AMFLoader.prototype = {
   parse: function(data) {
     "use strict";
 
-    var scale = 1.0;
-    var geometry = {};
-    var loadedmaterials = {};
-    var loadedobjects = {};
-    var amfobjects = [];
+    var amfobject = {
+      "name": "AMF Default Name",
+      "author": "",
+      "scale": 1.0,
+      "materials": {},
+      "objects": {}
+    };
 
+    var xmldata = this.loaddocument(data);
+
+    amfobject.scale = this.loaddocumentscale(xmldata);
+
+    var documentchildren = xmldata.documentElement.children;
+
+    for(var i = 0; i < documentchildren.length; i++) {
+      if(documentchildren[i].localName === 'metadata') {
+        if(documentchildren[i].attributes['type'] !== undefined) {
+          if(documentchildren[i].attributes['type'].value === 'name') {
+            amfobject.name = documentchildren[i].textContent;
+          } else if(documentchildren[i].attributes['type'].value === 'author') {
+            amfobject.author = documentchildren[i].textContent;
+          }
+        }
+      } else if(documentchildren[i].localName === 'material') {
+        var loadedmaterial = this.loadmaterials(documentchildren[i]);
+        amfobject.materials[loadedmaterial.id] = loadedmaterial.material;
+      } else if(documentchildren[i].localName === 'object') {
+        var loadedobject = this.loadobject(documentchildren[i]);
+        amfobject.objects[loadedobject.id] = loadedobject.object;
+      }
+    }
+
+    console.log(amfobject);
+    return amfobject;
+  },
+
+  loaddocument: function ( data ) {
     var view = new DataView(data);
 
     var magic = String.fromCharCode(view.getUint8(0), view.getUint8(1));
@@ -80,72 +111,122 @@ AMFLoader.prototype = {
 
     var xmldata = new DOMParser().parseFromString(filetext, 'text/xml');
 
-    document.xmldata = xmldata;
-
     if(xmldata.documentElement.nodeName.toLowerCase() !== "amf") {
       console.log("  Error loading AMF - no AMF document found.");
       return false;
     }
 
+    return xmldata;
+  },
+
+  loaddocumentscale: function ( xmldata ) {
+    var scale = 1.0;
+
     var unit = xmldata.documentElement.attributes['unit'].value.toLowerCase();
 
-    if(unit == 'millimeter') {
-      scale = 1.0;
-    } else if(unit == 'inch') {
-      scale = 25.4;
-    } else if(unit == 'feet') {
-      scale = 304.8;
-    } else if(unit == 'meter') {
-      scale = 1000.0;
-    } else if(unit == 'micron') {
-      scale = 0.001;
+    var scale_units = {
+      'millimeter': 1.0,
+      'inch': 25.4,
+      'feet': 304.8,
+      'meter': 1000.0,
+      'micron': 0.001
+    };
+
+    if(scale_units[unit] !== undefined) {
+      scale = scale_units[unit];
     }
 
     console.log("  Unit scale: " + scale);
+    return scale;
+  },
 
-    var amfmaterials = xmldata.getElementsByTagName('material');
+  loadmaterials: function ( node ) {
+    var mat = node;
 
-    for(var mi = 0; mi < amfmaterials.length ; mi++) {
-      var mat = amfmaterials[mi];
-      var matname = "AMF Material";
-      var matid = mat.attributes['id'].textContent;
-      var color = {'r': 1.0, 'g': 1.0, 'b': 1.0, 'a': 1.0, opacity: 1.0};
+    var loadedmaterial = null;
+    var matname = "AMF Material";
+    var matid = mat.attributes['id'].textContent;
+    var color;
 
-      for(var matci = 0; matci < mat.children.length; matci++) {
-        var matchildel = mat.children[matci];
+    for(var i = 0; i < mat.children.length; i++) {
+      var matchildel = mat.children[i];
 
-        if(matchildel.localName === "metadata") {
-          if(matchildel.attributes['type'] && matchildel.attributes['type'].value === 'name') {
-            matname = matchildel.textContent;
-          }
-        } else if(matchildel.localName === 'color') {
-          for(var clri = 0; clri < matchildel.children.length; clri++) {
-            var matcolor = matchildel.children[clri];
-
-            if(matcolor.localName === 'r') {
-              color.r = matcolor.textContent;
-            } else if(matcolor.localName === 'g') {
-              color.g = matcolor.textContent;
-            } else if(matcolor.localName === 'b') {
-              color.b = matcolor.textContent;
-            } else if(matcolor.localName === 'a') {
-              color.opacity = matcolor.textContent;
-            }
-          }
+      if(matchildel.localName === "metadata" && matchildel.attributes['type'] !== undefined) {
+        if(matchildel.attributes['type'].value === 'name') {
+          matname = matchildel.textContent;
         }
-      }
-
-      loadedmaterials[matid] = new THREE.MeshPhongMaterial({shading: THREE.FlatShading,
-                                                            color: new THREE.Color(color.r, color.g, color.b),
-                                                            name: matname});
-      if(color.opacity !== 1.0) {
-        loadedmaterials[matid].transparent = true;
-        loadedmaterials[matid].opacity = color.opacity;
+      } else if(matchildel.localName === 'color') {
+        color = this.loadcolor(matchildel);
       }
     }
 
-    console.log(loadedmaterials);
-    return amfobjects;
-  }
+    loadedmaterial = new THREE.MeshPhongMaterial({
+      shading: THREE.FlatShading,
+      color: new THREE.Color(color.r, color.g, color.b),
+      name: matname});
 
+    if(color.opacity !== 1.0) {
+      loadedmaterial.transparent = true;
+      loadedmaterial.opacity = color.opacity;
+    }
+
+    return { 'id': matid, 'material': loadedmaterial };
+  },
+
+  loadcolor: function ( node ) {
+    var color = {'r': 1.0, 'g': 1.0, 'b': 1.0, 'a': 1.0, opacity: 1.0};
+
+    for(var i = 0; i < node.children.length; i++) {
+      var matcolor = node.children[i];
+
+      if(matcolor.localName === 'r') {
+        color.r = matcolor.textContent;
+      } else if(matcolor.localName === 'g') {
+        color.g = matcolor.textContent;
+      } else if(matcolor.localName === 'b') {
+        color.b = matcolor.textContent;
+      } else if(matcolor.localName === 'a') {
+        color.opacity = matcolor.textContent;
+      }
+    }
+
+    return color;
+  },
+
+  loadobject: function ( node ) {
+    var objid = node.attributes['id'].textContent;
+    var loadedobject = { "name": "amfobject",
+      "color": null,
+      "volumes": []
+    };
+
+    document.loadedobject = node;
+
+    var currnode = node.firstElementChild;
+
+    while( currnode !== null ) {
+      if(currnode.localName === "metadata") {
+        if(currnode.attributes['type'] !== undefined) {
+          if(currnode.attributes['type'].value === 'name') {
+            loadedobject.name = currnode.textContent;
+          }
+        }
+      } else if(currnode.localName === "color") {
+        loadedobject.color = this.loadcolor(currnode);
+      } else if(currnode.localName === "mesh") {
+        var currmeshnode = currnode.firstElementChild;
+        while( currmeshnode !== null ) {
+          if(currmeshnode.localName === "vertices") {
+            "pass";
+          } else if(currmeshnode.localName === "volume") {
+            "pass";
+          }
+          currmeshnode = currmeshnode.nextElementSibling;
+        }
+      }
+      currnode = currnode.nextElementSibling;
+    }
+
+    return { 'id': objid, 'object': loadedobject };
+  }
 };
