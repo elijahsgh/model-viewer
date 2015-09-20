@@ -7,9 +7,7 @@
  * Usage:
  *  var loader = new AMFLoader();
  *  loader.load('/path/to/project.amf', function(amfobjects) {
-      for(amfobject in amfobjects) {
- *      scene.add(amfobject);
- *    }
+ *    <process amfobjects function>
  *  });
  *
  * Materials now supported, material colors supported
@@ -74,7 +72,7 @@ AMFLoader.prototype = {
       }
     }
 
-    console.log(amfobject);
+    console.log(JSON.stringify(amfobject));
     return amfobject;
   },
 
@@ -109,7 +107,7 @@ AMFLoader.prototype = {
 
     var filetext = new TextDecoder('utf-8').decode(view);
 
-    var xmldata = new DOMParser().parseFromString(filetext, 'text/xml');
+    var xmldata = new DOMParser().parseFromString(filetext, 'application/xml');
 
     if(xmldata.documentElement.nodeName.toLowerCase() !== "amf") {
       console.log("  Error loading AMF - no AMF document found.");
@@ -193,38 +191,106 @@ AMFLoader.prototype = {
     return color;
   },
 
-  loadobject: function ( node ) {
-    var objid = node.attributes['id'].textContent;
-    var loadedobject = { "name": "amfobject",
-      "color": null,
-      "volumes": []
-    };
+  loadmeshvolume: function( node ) {
+    var volume = {"name": "", "triangles": []};
 
-    document.loadedobject = node;
+    var currvolumenode = node.firstElementChild;
 
-    var currnode = node.firstElementChild;
-
-    while( currnode !== null ) {
-      if(currnode.localName === "metadata") {
-        if(currnode.attributes['type'] !== undefined) {
-          if(currnode.attributes['type'].value === 'name') {
-            loadedobject.name = currnode.textContent;
+    while( currvolumenode ) {
+      if( currvolumenode.localName === "metadata" ) {
+        if(currvolumenode.attributes['type'] !== undefined) {
+          if(currvolumenode.attributes['type'].value === 'name') {
+            volume.name = currvolumenode.textContent;
           }
         }
-      } else if(currnode.localName === "color") {
-        loadedobject.color = this.loadcolor(currnode);
-      } else if(currnode.localName === "mesh") {
-        var currmeshnode = currnode.firstElementChild;
-        while( currmeshnode !== null ) {
+      } else if ( currvolumenode.localName === "triangle" ) {
+        var trianglenode = currvolumenode.firstElementChild;
+
+        while( trianglenode ) {
+          if( trianglenode.localName === "v1" ||
+              trianglenode.localName === "v2" ||
+              trianglenode.localName === "v3") {
+            volume.triangles.push(trianglenode.textContent);
+          }
+
+          trianglenode = trianglenode.nextElementSibling;
+        }
+      }
+      currvolumenode = currvolumenode.nextElementSibling;
+    }
+
+    return volume;
+  },
+
+  loadmeshvertices: function( node ) {
+    var vert_array = [];
+
+    var currverticesnode = node.firstElementChild;
+
+    while( currverticesnode ) {
+      if ( currverticesnode.localName === "vertex" ) {
+        var vnode = currverticesnode.firstElementChild;
+
+        while( vnode ) {
+          if( vnode.localName === "coordinates") {
+            var coordnode = vnode.firstElementChild;
+
+            while( coordnode ) {
+
+              if( coordnode.localName === "x" ||
+                  coordnode.localName === "y" ||
+                  coordnode.localName === "z") {
+                vert_array.push(coordnode.textContent);
+              }
+
+              coordnode = coordnode.nextElementSibling;
+            }
+          }
+          vnode = vnode.nextElementSibling;
+        }
+      }
+      currverticesnode = currverticesnode.nextElementSibling;
+    }
+
+    return vert_array;
+  },
+
+  loadobject: function ( node ) {
+    "use strict";
+    var objid = node.attributes['id'].textContent;
+    var loadedobject = { "name": "amfobject",
+      "meshes": []
+    };
+
+    var currcolor = null;
+
+    var currobjnode = node.firstElementChild;
+
+    while( currobjnode ) {
+      if(currobjnode.localName === "metadata") {
+        if(currobjnode.attributes['type'] !== undefined) {
+          if(currobjnode.attributes['type'].value === 'name') {
+            loadedobject.name = currobjnode.textContent;
+          }
+        }
+      } else if(currobjnode.localName === "color") {
+        currcolor = this.loadcolor(currobjnode);
+      } else if(currobjnode.localName === "mesh") {
+        var currmeshnode = currobjnode.firstElementChild;
+        var mesh = {"vertices": [], "volumes": [], "color": currcolor };
+
+        while( currmeshnode ) {
           if(currmeshnode.localName === "vertices") {
-            "pass";
+            mesh.vertices = mesh.vertices.concat(this.loadmeshvertices(currmeshnode));
           } else if(currmeshnode.localName === "volume") {
-            "pass";
+            mesh.volumes.push(this.loadmeshvolume(currmeshnode));
           }
           currmeshnode = currmeshnode.nextElementSibling;
         }
+
+        loadedobject.meshes.push(mesh);
       }
-      currnode = currnode.nextElementSibling;
+      currobjnode = currobjnode.nextElementSibling;
     }
 
     return { 'id': objid, 'object': loadedobject };
