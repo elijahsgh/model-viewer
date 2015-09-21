@@ -608,17 +608,12 @@
         var meshindex = mesh.geometry.getAttribute('index').array;
         var vertarray = [];
 
-        console.log(meshvertices);
-        console.log(meshindex);
-
         for(var i = 0; i < meshindex.length; i++) {
           vertarray.push(meshvertices[meshindex[i]*3]);
           vertarray.push(meshvertices[meshindex[i]*3+1]);
           vertarray.push(meshvertices[meshindex[i]*3+2]);
         }
         vertices = vertarray;
-
-        console.log(vertices);
       }
 
       mesh.matrix.applyToVector3Array(vertices);
