@@ -18,7 +18,7 @@
 <script src="../bytebuffer/dist/ByteBufferAB.js"></script>
 <script src="../protobuf/dist/ProtoBuf.js"></script>
 <script src="../jszip/dist/jszip.min.js"></script>
-<script src="amfloader.js"></script>
+<script src="amfloader_v2.js"></script>
 
 <script src="model-viewer-OrbitControls.js"></script>
 <script src="utility.js"></script>
@@ -384,6 +384,8 @@
         for(var i = 0; i < geometry.length; i++) {
             geometries.push(geometry[i]);
         }
+      } else if(geometry instanceof THREE.Object3D){
+        scene.add(geometry);
       } else {
         geometries.push(geometry);
       }
@@ -403,7 +405,7 @@
       var max = {x: 1, y: 1, z: 1};
 
       for(var i = 0; i < geometries.length; i++) {
-        var currmaterial = materials[0];
+        var currmaterial = defaultmaterial;
         var sceneobject = { mesh: null, boundingbox: null,
                             originalmaterial: null,
                             wireframe: null, enablewireframe: false,
@@ -414,8 +416,6 @@
 
         if(i < materials.length && materials[i] !== null) {
           currmaterial = materials[i];
-        } else {
-          currmaterial = defaultmaterial;
         }
 
         sceneobject.originalmaterial = currmaterial;
@@ -604,14 +604,21 @@
         vertices = meshgeometry.array;
       } else {
         console.log("Indexed geometry");
-        var faces = mesh.geometry.getAttribute('index').array;
-        var vertarray = new Float32Array(faces);
+        var meshvertices = meshgeometry.array;
+        var meshindex = mesh.geometry.getAttribute('index').array;
+        var vertarray = [];
 
-        for(var i = 0; i < faces.length; i++) {
-          vertarray[i] = meshgeometry.array[faces[i]];
+        console.log(meshvertices);
+        console.log(meshindex);
+
+        for(var i = 0; i < meshindex.length; i++) {
+          vertarray.push(meshvertices[meshindex[i]*3]);
+          vertarray.push(meshvertices[meshindex[i]*3+1]);
+          vertarray.push(meshvertices[meshindex[i]*3+2]);
         }
-
         vertices = vertarray;
+
+        console.log(vertices);
       }
 
       mesh.matrix.applyToVector3Array(vertices);

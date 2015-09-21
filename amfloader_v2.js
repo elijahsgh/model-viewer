@@ -6,13 +6,13 @@
  *
  * Usage:
  *  var loader = new AMFLoader();
- *  loader.load('/path/to/project.amf', function(amfobjects) {
- *    <process amfobjects function>
+ *  loader.load('/path/to/project.amf', function(geometries, materials) {
+ *    <create THREE.Mesh objects from Array geometries and Array materials>
  *  });
  *
  * Materials now supported, material colors supported
- * No support for colors (yet)
  * Zip support, requires jszip
+ * No constellation support !
  *
  */
 
@@ -33,47 +33,100 @@ AMFLoader.prototype = {
 
     loader.load(url, function(text) {
       var result = scope.parse(text);
-      onLoad(result);
+      onLoad(result.geometry, result.materials);
     }, onProgress, onError);
   },
 
   parse: function(data) {
     "use strict";
 
-    var amfobject = {
-      "name": "AMF Default Name",
-      "author": "",
-      "scale": 1.0,
-      "materials": {},
-      "objects": {}
-    };
+    var amf_name = "";
+    var amf_author = "";
+    var amf_scale = 1.0;
+    var amf_materials = {};
+    var amf_objects = {};
+
+    var loadedgeometries = [];
+    var loadedmaterials = [];
 
     var xmldata = this.loaddocument(data);
 
-    amfobject.scale = this.loaddocumentscale(xmldata);
+    amf_scale = this.loaddocumentscale(xmldata);
 
     var documentchildren = xmldata.documentElement.children;
 
     for(var i = 0; i < documentchildren.length; i++) {
-      if(documentchildren[i].localName === 'metadata') {
+      if(documentchildren[i].nodeName === 'metadata') {
         if(documentchildren[i].attributes['type'] !== undefined) {
           if(documentchildren[i].attributes['type'].value === 'name') {
-            amfobject.name = documentchildren[i].textContent;
+            amf_name = documentchildren[i].textContent;
           } else if(documentchildren[i].attributes['type'].value === 'author') {
-            amfobject.author = documentchildren[i].textContent;
+            amf_author = documentchildren[i].textContent;
           }
         }
-      } else if(documentchildren[i].localName === 'material') {
+      } else if(documentchildren[i].nodeName === 'material') {
         var loadedmaterial = this.loadmaterials(documentchildren[i]);
-        amfobject.materials[loadedmaterial.id] = loadedmaterial.material;
-      } else if(documentchildren[i].localName === 'object') {
+        amf_materials[loadedmaterial.id] = loadedmaterial.material;
+      } else if(documentchildren[i].nodeName === 'object') {
         var loadedobject = this.loadobject(documentchildren[i]);
-        amfobject.objects[loadedobject.id] = loadedobject.object;
+        amf_objects[loadedobject.id] = loadedobject.obj;
       }
     }
 
-    console.log(JSON.stringify(amfobject));
-    return amfobject;
+    var sceneobject = new THREE.Object3D();
+
+    sceneobject.name = amf_name;
+    sceneobject.userData.author = amf_author;
+    sceneobject.userData.loader = "AMF";
+
+    var defaultmaterial = new THREE.MeshPhongMaterial({shading: THREE.FlatShading, color: 0xaaaaff});
+
+    for(var objid in amf_objects) {
+      var newobject = new THREE.Object3D();
+
+      for(var meshi = 0; meshi < amf_objects[objid].meshes.length; meshi++) {
+        var meshvertices = Float32Array.from(amf_objects[objid].meshes[meshi].vertices);
+        var vertices = new THREE.BufferAttribute(Float32Array.from(meshvertices), 3);
+        var objdefaultmaterial = defaultmaterial;
+
+        if(amf_objects[objid].meshes[meshi].color) {
+          var color = amf_objects[objid].meshes[meshi].color;
+          objdefaultmaterial = defaultmaterial.clone();
+          objdefaultmaterial.color = new THREE.Color(color.r, color.g, color.b);
+
+          if(color.a != 1.0) {
+            objdefaultmaterial.transparent = true;
+            objdefaultmaterial.opacity = color.a;
+          }
+        }
+
+        for(var voli = 0; voli < amf_objects[objid].meshes[meshi].volumes.length; voli++) {
+          var currvolume = amf_objects[objid].meshes[meshi].volumes[voli];
+          var newgeometry = new THREE.BufferGeometry();
+          var indexes = Uint32Array.from(currvolume.triangles);
+          var material = objdefaultmaterial;
+
+          newgeometry.addAttribute('position', vertices.clone());
+          newgeometry.addAttribute('index', new THREE.BufferAttribute(indexes, 1));
+
+          if(amf_materials[currvolume.materialid] !== undefined) {
+            material = amf_materials[currvolume.materialid];
+          }
+
+          newgeometry.scale(amf_scale, amf_scale, amf_scale);
+
+          loadedgeometries.push(newgeometry);
+          loadedmaterials.push(material.clone());
+
+          var newmesh = new THREE.Mesh(newgeometry, material.clone());
+          newobject.add(newmesh);
+        }
+      }
+      sceneobject.add(newobject);
+    }
+
+    // return sceneobject;
+    return { geometry: loadedgeometries, materials: loadedmaterials };
   },
 
   loaddocument: function ( data ) {
@@ -149,11 +202,11 @@ AMFLoader.prototype = {
     for(var i = 0; i < mat.children.length; i++) {
       var matchildel = mat.children[i];
 
-      if(matchildel.localName === "metadata" && matchildel.attributes['type'] !== undefined) {
+      if(matchildel.nodeName === "metadata" && matchildel.attributes['type'] !== undefined) {
         if(matchildel.attributes['type'].value === 'name') {
           matname = matchildel.textContent;
         }
-      } else if(matchildel.localName === 'color') {
+      } else if(matchildel.nodeName === 'color') {
         color = this.loadcolor(matchildel);
       }
     }
@@ -177,13 +230,13 @@ AMFLoader.prototype = {
     for(var i = 0; i < node.children.length; i++) {
       var matcolor = node.children[i];
 
-      if(matcolor.localName === 'r') {
+      if(matcolor.nodeName === 'r') {
         color.r = matcolor.textContent;
-      } else if(matcolor.localName === 'g') {
+      } else if(matcolor.nodeName === 'g') {
         color.g = matcolor.textContent;
-      } else if(matcolor.localName === 'b') {
+      } else if(matcolor.nodeName === 'b') {
         color.b = matcolor.textContent;
-      } else if(matcolor.localName === 'a') {
+      } else if(matcolor.nodeName === 'a') {
         color.opacity = matcolor.textContent;
       }
     }
@@ -192,24 +245,28 @@ AMFLoader.prototype = {
   },
 
   loadmeshvolume: function( node ) {
-    var volume = {"name": "", "triangles": []};
+    var volume = { "name": "", "triangles": [], "materialid": null };
 
     var currvolumenode = node.firstElementChild;
 
+    if(node.attributes['materialid'] !== undefined) {
+      volume.materialid = node.attributes['materialid'].nodeValue;
+    }
+
     while( currvolumenode ) {
-      if( currvolumenode.localName === "metadata" ) {
+      if( currvolumenode.nodeName === "metadata" ) {
         if(currvolumenode.attributes['type'] !== undefined) {
           if(currvolumenode.attributes['type'].value === 'name') {
             volume.name = currvolumenode.textContent;
           }
         }
-      } else if ( currvolumenode.localName === "triangle" ) {
+      } else if ( currvolumenode.nodeName === "triangle" ) {
         var trianglenode = currvolumenode.firstElementChild;
 
         while( trianglenode ) {
-          if( trianglenode.localName === "v1" ||
-              trianglenode.localName === "v2" ||
-              trianglenode.localName === "v3") {
+          if( trianglenode.nodeName === "v1" ||
+              trianglenode.nodeName === "v2" ||
+              trianglenode.nodeName === "v3") {
             volume.triangles.push(trianglenode.textContent);
           }
 
@@ -228,18 +285,18 @@ AMFLoader.prototype = {
     var currverticesnode = node.firstElementChild;
 
     while( currverticesnode ) {
-      if ( currverticesnode.localName === "vertex" ) {
+      if ( currverticesnode.nodeName === "vertex" ) {
         var vnode = currverticesnode.firstElementChild;
 
         while( vnode ) {
-          if( vnode.localName === "coordinates") {
+          if( vnode.nodeName === "coordinates") {
             var coordnode = vnode.firstElementChild;
 
             while( coordnode ) {
 
-              if( coordnode.localName === "x" ||
-                  coordnode.localName === "y" ||
-                  coordnode.localName === "z") {
+              if( coordnode.nodeName === "x" ||
+                  coordnode.nodeName === "y" ||
+                  coordnode.nodeName === "z") {
                 vert_array.push(coordnode.textContent);
               }
 
@@ -258,31 +315,29 @@ AMFLoader.prototype = {
   loadobject: function ( node ) {
     "use strict";
     var objid = node.attributes['id'].textContent;
-    var loadedobject = { "name": "amfobject",
-      "meshes": []
-    };
+    var loadedobject = { "name": "amfobject", "meshes": [] };
 
     var currcolor = null;
 
     var currobjnode = node.firstElementChild;
 
     while( currobjnode ) {
-      if(currobjnode.localName === "metadata") {
+      if(currobjnode.nodeName === "metadata") {
         if(currobjnode.attributes['type'] !== undefined) {
           if(currobjnode.attributes['type'].value === 'name') {
             loadedobject.name = currobjnode.textContent;
           }
         }
-      } else if(currobjnode.localName === "color") {
+      } else if(currobjnode.nodeName === "color") {
         currcolor = this.loadcolor(currobjnode);
-      } else if(currobjnode.localName === "mesh") {
+      } else if(currobjnode.nodeName === "mesh") {
         var currmeshnode = currobjnode.firstElementChild;
         var mesh = {"vertices": [], "volumes": [], "color": currcolor };
 
         while( currmeshnode ) {
-          if(currmeshnode.localName === "vertices") {
+          if(currmeshnode.nodeName === "vertices") {
             mesh.vertices = mesh.vertices.concat(this.loadmeshvertices(currmeshnode));
-          } else if(currmeshnode.localName === "volume") {
+          } else if(currmeshnode.nodeName === "volume") {
             mesh.volumes.push(this.loadmeshvolume(currmeshnode));
           }
           currmeshnode = currmeshnode.nextElementSibling;
@@ -293,6 +348,6 @@ AMFLoader.prototype = {
       currobjnode = currobjnode.nextElementSibling;
     }
 
-    return { 'id': objid, 'object': loadedobject };
+    return { 'id': objid, 'obj': loadedobject };
   }
 };
