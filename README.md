@@ -1,5 +1,7 @@
 # model-viewer
 
+**Project currently paused (September 30th, 2015) while work is completed to add AMF loading to three.js.**  The current release branch is stable if you wish to use this project in your work.
+
 This is a Polymer based project to provide a basic model viewer for websites that want to display models intended for 3D printing.  The model is displayed using three.js and the loader currently supports STL, three.js JSON and Protocol Buffer encoded models.
 
 In addition to basic viewer functionality you can scale, rotate and export an object directly from the viewer into an STL file.
